@@ -7,7 +7,7 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: '首页', link: '/' },
-      { text: '歌曲笔记', link: '/songs/' },
+      { text: '歌曲笔记', link: '/songs/example-song.md' },
       { text: '生词本', link: '/vocab-book.md' },
       { text: '语法库', link: '/grammar-bank.md' },
       { text: 'Copilot指令', link: '/copilot-command.md' },
@@ -16,12 +16,14 @@ export default defineConfig({
     sidebar: [
       {
         text: "术曲学习笔记",
-        items: []
+        items: [
+          { text: "示例歌曲笔记", link: "/songs/example-song.md" }
+        ]
       },
       {
         text: "知识库",
         items: [
- { text: "生词本", link: "/vocab-book.md" },
+          { text: "生词本", link: "/vocab-book.md" },
           { text: "语法汇总", link: "/grammar-bank.md" }
         ]
       },
