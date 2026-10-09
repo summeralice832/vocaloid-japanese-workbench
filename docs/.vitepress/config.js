@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
+  // ========== 这一行就是base！！ ==========
+  base: '/vocaloid-japanese-workbench/',
+  // ======================================
   title: "术曲日语学习工作台",
   description: "基于Vocaloid术曲的日语语法自学知识库",
   themeConfig: {
