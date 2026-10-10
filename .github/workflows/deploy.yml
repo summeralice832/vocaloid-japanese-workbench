@@ -20,6 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          package-manager-cache: false  # ✅强制关闭自动缓存，不再寻找lock文件
 
       - name: Install dependencies
         run: npm install
