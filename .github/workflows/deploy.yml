@@ -16,11 +16,11 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          package-manager-cache: false  # ✅强制关闭自动缓存，不再寻找lock文件
+      # 不使用setup‑node，手动安装node，彻底避开lock‑file缓存bug
+      - name: Install Node 20
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+          sudo apt‑get install -y nodejs
 
       - name: Install dependencies
         run: npm install
@@ -29,10 +29,10 @@ jobs:
         run: npm run build
 
       - name: Upload build artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload‑pages‑artifact@v3
         with:
           path: docs/.vitepress/dist
 
       - name: Deploy to GitHub Pages
         id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy‑pages@v4
