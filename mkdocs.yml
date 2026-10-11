@@ -1,0 +1,20 @@
+site_name: 术曲日语学习工作台
+site_url: https://summeralice832.github.io/vocaloid-japanese-workbench/
+theme:
+  name: material
+  features:
+    - search.suggest
+    - search.highlight
+    - content.code.copy # 代码块一键复制，复制提示词必备
+docs_dir: docs
+nav:
+  - 🏠首页: index.md
+  - 📝提示词库: prompt-library.md
+  - 🤖Copilot调用指令: copilot-command.md
+  - 🎵整首解析提示词: full-song-prompt.md
+  - 📚语法总库: grammar-bank.md
+  - 📖生词记录本: vocab-book.md
+  - 🎶歌词笔记库:
+      - songs/index.md #后续你可以在songs下面新建索引md
+plugins:
+  - search
