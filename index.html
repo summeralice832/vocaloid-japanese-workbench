@@ -1,1039 +1,1291 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Vocaloid Japanese Workbench</title>
-<style>
-:root {
---bg: #f4f5f8;
---card: #ffffff;
---text: #1f2937;
---muted: #6b7280;
---primary: #6366f1;
---primary-hover: #4f46e5;
---danger: #ef4444;
---danger-hover: #dc2626;
---border: #e5e7eb;
---radius: 10px;
-}
-* { box-sizing: border-box; }
-body {
-margin: 0;
-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-background: var(--bg);
-color: var(--text);
-line-height: 1.6;
-}
-header {
-background: var(--card);
-border-bottom: 1px solid var(--border);
-padding: 0.75rem 1.5rem;
-position: sticky;
-top: 0;
-z-index: 10;
-}
-header .inner {
-max-width: 1000px;
-margin: 0 auto;
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 1rem;
-flex-wrap: wrap;
-}
-header h1 { margin: 0; font-size: 1.1rem; white-space: nowrap; }
-.tabs { display: flex; gap: 0.25rem; flex-wrap: wrap; }
-.tab {
-padding: 0.45rem 0.9rem;
-border: none;
-background: transparent;
-color: var(--muted);
-cursor: pointer;
-border-radius: var(--radius);
-font-size: 0.9rem;
-}
-.tab.active { background: #eef2ff; color: var(--primary); font-weight: 600; }
-main { max-width: 1000px; margin: 1.5rem auto; padding: 0 1rem 3rem; }
-.panel { display: none; }
-.panel.active { display: block; }
-.card {
-background: var(--card);
-border: 1px solid var(--border);
-border-radius: var(--radius);
-padding: 1.25rem;
-margin-bottom: 1rem;
-}
-.page-header {
-display: flex; align-items: center; justify-content: space-between;
-margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;
-}
-h2 { margin: 0; font-size: 1.05rem; }
-h3 { margin: 0 0 0.5rem; font-size: 0.95rem; color: var(--muted); font-weight: 500; }
-label { display: block; margin: 0.75rem 0 0.25rem; color: var(--muted); font-size: 0.85rem; }
-textarea, input[type="text"], input[type="password"], select {
-width: 100%;
-padding: 0.6rem 0.75rem;
-border: 1px solid var(--border);
-border-radius: var(--radius);
-font-size: 0.95rem;
-font-family: inherit;
-}
-textarea { min-height: 120px; resize: vertical; }
-.row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-.row > .grow { flex: 1; min-width: 200px; }
-button {
-padding: 0.5rem 1rem;
-border: none;
-border-radius: var(--radius);
-cursor: pointer;
-font-size: 0.9rem;
-transition: background 0.15s;
-}
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover { background: var(--primary-hover); }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover { background: var(--danger-hover); }
-.btn-secondary { background: #e5e7eb; color: var(--text); }
-.btn-secondary:hover { background: #d1d5db; }
-.btn-small { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
-.hint { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; }
-.status { margin-top: 0.75rem; font-size: 0.9rem; min-height: 1.4em; }
-.status.ok { color: #16a34a; }
-.status.err { color: var(--danger); }
- 
-/* 列表通用 */
-.list { margin-top: 0.75rem; }
-.empty { color: var(--muted); font-size: 0.9rem; padding: 0.75rem 0; text-align: center; }
-.toolbar {
-display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; flex-wrap: wrap;
-}
-.toolbar label { margin: 0; font-size: 0.85rem; }
- 
-/* 折叠条 */
-.item {
-border: 1px solid var(--border);
-border-radius: var(--radius);
-margin-bottom: 0.5rem;
-overflow: hidden;
-background: #fff;
-}
-.item-row {
-padding: 0.7rem 0.9rem;
-background: #fafbfd;
-display: flex;
-align-items: center;
-gap: 0.7rem;
-cursor: pointer;
-user-select: none;
-}
-.item-row:hover { background: #f3f4f8; }
-.item-row .checkbox { cursor: pointer; flex-shrink: 0; }
-.item-row .arrow {
-flex-shrink: 0; transition: transform 0.15s; color: var(--muted); font-size: 0.8rem;
-}
-.item.expanded .item-row .arrow { transform: rotate(90deg); }
-.item-main { flex: 1; overflow: hidden; }
-.item-title { font-weight: 500; font-size: 0.95rem; }
-.item-sub { font-size: 0.82rem; color: var(--muted); margin-top: 0.1rem; }
-.item-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
-.item-body {
-padding: 0.75rem 0.9rem;
-display: none;
-font-size: 0.9rem;
-border-top: 1px solid var(--border);
-background: #fff;
-}
-.item.expanded .item-body { display: block; }
-.item-body .field { margin-bottom: 0.35rem; }
-.item-body .field-label { color: var(--muted); font-size: 0.78rem; margin-right: 0.3rem; }
- 
-.song-tag {
-display: inline-block;
-background: #eef2ff;
-color: var(--primary);
-font-size: 0.75rem;
-padding: 0.1rem 0.5rem;
-border-radius: 999px;
-margin-left: 0.3rem;
-}
- 
-/* 确认弹窗 */
-.modal-mask {
-position: fixed; inset: 0;
-background: rgba(0,0,0,0.4);
-display: none; align-items: center; justify-content: center;
-z-index: 100;
-}
-.modal-mask.show { display: flex; }
-.modal {
-background: #fff; border-radius: var(--radius); padding: 1.5rem;
-max-width: 420px; width: 90%;
-}
-.modal h3 { margin-top: 0; }
-.modal .actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
- 
-/* 统计条 */
-.stats { font-size: 0.85rem; color: var(--muted); }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vocaloid Japanese Workbench</title>
+  <style>
+    :root {
+      --bg: #f4f5f8;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --border: #e5e7eb;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header .inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    header h1 { margin: 0; font-size: 1.1rem; white-space: nowrap; }
+    .tabs { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    .tab {
+      padding: 0.45rem 0.9rem;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+    }
+    .tab.active { background: #eef2ff; color: var(--primary); font-weight: 600; }
+    main { max-width: 1000px; margin: 1.5rem auto; padding: 0 1rem 3rem; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;
+    }
+    h2 { margin: 0; font-size: 1.05rem; }
+    label { display: block; margin: 0.75rem 0 0.25rem; color: var(--muted); font-size: 0.85rem; }
+    textarea, input[type="text"], input[type="password"], select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    textarea { min-height: 110px; resize: vertical; }
+    .row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .row > .grow { flex: 1; min-width: 200px; }
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: var(--danger-hover); }
+    .btn-secondary { background: #e5e7eb; color: var(--text); }
+    .btn-secondary:hover { background: #d1d5db; }
+    .btn-small { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+    .hint { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; }
+    .status { margin-top: 0.75rem; font-size: 0.9rem; min-height: 1.4em; }
+    .status.ok { color: #16a34a; }
+    .status.err { color: var(--danger); }
+
+    /* 列表通用 */
+    .list { margin-top: 0.75rem; }
+    .empty { color: var(--muted); font-size: 0.9rem; padding: 0.75rem 0; text-align: center; }
+    .toolbar {
+      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; flex-wrap: wrap;
+    }
+    .toolbar label { margin: 0; font-size: 0.85rem; }
+
+    /* 折叠条 */
+    .item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+      background: #fff;
+    }
+    .item-row {
+      padding: 0.7rem 0.9rem;
+      background: #fafbfd;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .item-row:hover { background: #f3f4f8; }
+    .item-row .checkbox { cursor: pointer; flex-shrink: 0; }
+    .item-row .arrow {
+      flex-shrink: 0; transition: transform 0.15s; color: var(--muted); font-size: 0.8rem;
+    }
+    .item.expanded .item-row .arrow { transform: rotate(90deg); }
+    .item-main { flex: 1; overflow: hidden; }
+    .item-title { font-weight: 500; font-size: 0.95rem; }
+    .item-sub {
+      font-size: 0.82rem; color: var(--muted); margin-top: 0.1rem;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .item-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .item-body {
+      padding: 0.75rem 0.9rem;
+      display: none;
+      font-size: 0.9rem;
+      border-top: 1px solid var(--border);
+      background: #fff;
+    }
+    .item.expanded .item-body { display: block; }
+    .item-body .field { margin-bottom: 0.5rem; }
+    .item-body .field-label {
+      display: inline-block; min-width: 4.2em;
+      color: var(--muted); font-size: 0.78rem;
+      vertical-align: top;
+    }
+    .item-body .field-value { display: inline-block; white-space: pre-wrap; max-width: calc(100% - 5em); }
+    .item-body .block-value { white-space: pre-wrap; margin-top: 0.15rem; }
+
+    .song-tag {
+      display: inline-block;
+      background: #eef2ff;
+      color: var(--primary);
+      font-size: 0.75rem;
+      padding: 0.1rem 0.5rem;
+      border-radius: 999px;
+      margin-left: 0.3rem;
+    }
+
+    /* 歌词对照 */
+    .lyric-pair {
+      border-left: 3px solid #c7d2fe;
+      padding: 0.25rem 0 0.25rem 0.6rem;
+      margin-bottom: 0.55rem;
+    }
+    .lyric-jp { font-size: 0.92rem; }
+    .lyric-cn { font-size: 0.86rem; color: var(--muted); margin-top: 0.1rem; }
+    .lyric-raw { white-space: pre-wrap; font-size: 0.9rem; }
+
+    /* 确认弹窗 */
+    .modal-mask {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-mask.show { display: flex; }
+    .modal {
+      background: #fff; border-radius: var(--radius); padding: 1.5rem;
+      max-width: 420px; width: 90%;
+    }
+    .modal h3 { margin-top: 0; }
+    .modal .actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
+
+    .stats { font-size: 0.85rem; color: var(--muted); font-weight: 400; }
+  </style>
 </head>
 <body>
-<header>
-<div class="inner">
-<h1>🎤 Vocaloid 日语学习工作台</h1>
-<nav class="tabs" id="navTabs">
-<button class="tab" data-route="workbench">工作台</button>
-<button class="tab" data-route="lyrics">歌词本</button>
-<button class="tab" data-route="words">单词本</button>
-<button class="tab" data-route="grammar">语法库</button>
-<button class="tab" data-route="quiz">题库</button>
-<button class="tab" data-route="settings">设置</button>
-</nav>
-</div>
-</header>
- 
-<main>
-<!-- 工作台 -->
-<section id="panel-workbench" class="panel">
-<div class="card">
-<h2>🎬 分析歌词</h2>
-<label>歌曲（先在歌词本创建，这里可关联）</label>
-<select id="wbSongSelect">
-<option value="">-- 不关联，仅临时分析 --</option>
-</select>
-<label>日文歌词</label>
-<textarea id="lyricsInput" placeholder="把日文歌词粘贴到这里…"></textarea>
-<div style="display:flex; gap:0.5rem; margin-top:0.75rem; flex-wrap:wrap;">
-<button class="btn-primary" id="analyzeBtn">一键去 DeepSeek 分析</button>
-<button class="btn-secondary" id="copyPromptBtn">复制提示词模板</button>
-</div>
-<p class="hint">
-点击按钮会在新标签页打开 DeepSeek，并把预设提示词 + 歌词写入 URL 参数；
-若内容过长请直接复制提示词手动粘贴。
-</p>
-</div>
- 
-<div class="card">
-<h2>📥 导入 AI 分析结果</h2>
-<label>关联到哪首歌</label>
-<select id="importSongSelect">
-<option value="">-- 请先在歌词本添加歌曲 --</option>
-</select>
-<label>AI 输出原文（需包含 【生词】【语法】【习题】 三个分区，每行用 | 分隔）</label>
-<textarea id="analysisInput" placeholder="示例：
+  <header>
+    <div class="inner">
+      <h1>🎤 Vocaloid 日语学习工作台</h1>
+      <nav class="tabs" id="navTabs">
+        <button class="tab" data-route="workbench">工作台</button>
+        <button class="tab" data-route="lyrics">歌词本</button>
+        <button class="tab" data-route="words">单词本</button>
+        <button class="tab" data-route="grammar">语法库</button>
+        <button class="tab" data-route="quiz">题库</button>
+        <button class="tab" data-route="settings">设置</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ==================== 工作台（输入与操作中心） ==================== -->
+    <section id="panel-workbench" class="panel">
+      <div class="card">
+        <h2>➕ 新建歌曲</h2>
+        <label>歌名</label>
+        <input type="text" id="songTitle" placeholder="例如：ロストワンの号哭" />
+        <label>歌手 / P主（可选）</label>
+        <input type="text" id="songArtist" placeholder="例如：じん" />
+        <label>歌词对照（可选，支持 AI 输出格式：日文：… / 中文：…）</label>
+        <textarea id="songLyricsPairs" placeholder="日文：今日も世界は回ってる
+中文：今天世界也在转动
+日文：それでも僕は歌うよ
+中文：即便如此我也要歌唱"></textarea>
+        <label>原词（可选，无对照时的备用展示）</label>
+        <textarea id="songOriginal" placeholder="日文原词…"></textarea>
+        <label>翻译（可选）</label>
+        <textarea id="songTranslation" placeholder="中文翻译…"></textarea>
+        <button class="btn-primary" id="addSongBtn" style="margin-top:0.75rem;">加入歌词本</button>
+        <div id="addSongStatus" class="status"></div>
+      </div>
+
+      <div class="card">
+        <h2>🎬 分析歌词</h2>
+        <label>歌曲（可选，仅用于把歌名带进提示词）</label>
+        <select id="wbSongSelect">
+          <option value="">-- 不关联，仅临时分析 --</option>
+        </select>
+        <label>日文歌词</label>
+        <textarea id="lyricsInput" placeholder="把日文歌词粘贴到这里…"></textarea>
+        <div style="display:flex; gap:0.5rem; margin-top:0.75rem; flex-wrap:wrap;">
+          <button class="btn-primary" id="analyzeBtn">一键去 DeepSeek 分析</button>
+          <button class="btn-secondary" id="copyPromptBtn">复制提示词模板</button>
+        </div>
+        <p class="hint">
+          点击按钮会在新标签页打开 DeepSeek，并把预设提示词 + 歌词写入 URL 参数；
+          若内容过长请使用「复制提示词模板」手动粘贴。
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>📥 导入 AI 分析结果</h2>
+        <label>关联到哪首歌</label>
+        <select id="importSongSelect">
+          <option value="">-- 请先新建歌曲 --</option>
+        </select>
+        <label>AI 输出原文（需包含 【歌词对照】【生词】【语法】【习题】 分区）</label>
+        <textarea id="analysisInput" style="min-height:220px;" placeholder="示例：
+【歌词对照】
+日文：今日も世界は回ってる
+中文：今天世界也在转动
+
 【生词】
-歌う | うたう | 唱歌 | 彼女は歌うのが好きです。
-寂しい | さびしい | 寂寞 | 夜は寂しいです。
- 
+歌う | うたう | 动词 | 歌 | 唱歌 | 彼女は歌うのが好きです。 | 她喜欢唱歌。
+
 【语法】
-～てもいい | 可以… | ここに座ってもいいですか？
-～ながら | 边…边… | 音楽を聞きながら勉強する。
- 
+～てもいい | 动词て形 + もいい | 表示许可 | 表示可以做某事 | ここに座ってもいいですか？ | 可以坐这里吗？
+
 【习题】
-Q: 「てもいい」の意味は？ | A: 「許可」を表す。"></textarea>
-<button class="btn-primary" id="classifyBtn" style="margin-top:0.75rem;">智能分类并入库</button>
-<div id="importStatus" class="status"></div>
-</div>
-</section>
- 
-<!-- 歌词本 -->
-<section id="panel-lyrics" class="panel">
-<div class="card">
-<h2>➕ 添加歌曲</h2>
-<label>歌名</label>
-<input type="text" id="songTitle" placeholder="例如：ロストワンの号哭" />
-<label>歌手 / P主（可选）</label>
-<input type="text" id="songArtist" placeholder="例如：じん" />
-<label>原词</label>
-<textarea id="songOriginal" placeholder="日文原词…"></textarea>
-<label>翻译（可选）</label>
-<textarea id="songTranslation" placeholder="中文翻译…"></textarea>
-<button class="btn-primary" id="addSongBtn" style="margin-top:0.75rem;">加入歌词本</button>
-</div>
- 
-<div class="card">
-<div class="page-header">
-<h2>📖 歌词本 <span class="stats" id="lyricsStats"></span></h2>
-</div>
-<div id="lyricsList" class="list"></div>
-</div>
-</section>
- 
-<!-- 单词本 -->
-<section id="panel-words" class="panel">
-<div class="card">
-<div class="page-header">
-<h2>📚 单词本 <span class="stats" id="wordsStats"></span></h2>
-</div>
-<div class="toolbar">
-<label><input type="checkbox" id="wordsSelectAll"> 全选</label>
-<button class="btn-danger btn-small" id="wordsBatchDelete">批量删除</button>
-<span class="hint" id="wordsBatchHint"></span>
-</div>
-<div id="wordsList" class="list"></div>
-</div>
-</section>
- 
-<!-- 语法库 -->
-<section id="panel-grammar" class="panel">
-<div class="card">
-<div class="page-header">
-<h2>🧩 语法库 <span class="stats" id="grammarStats"></span></h2>
-</div>
-<div class="toolbar">
-<label><input type="checkbox" id="grammarSelectAll"> 全选</label>
-<button class="btn-danger btn-small" id="grammarBatchDelete">批量删除</button>
-<span class="hint" id="grammarBatchHint"></span>
-</div>
-<div id="grammarList" class="list"></div>
-</div>
-</section>
- 
-<!-- 题库 -->
-<section id="panel-quiz" class="panel">
-<div class="card">
-<div class="page-header">
-<h2>✍️ 题库 <span class="stats" id="quizStats"></span></h2>
-</div>
-<div class="toolbar">
-<label><input type="checkbox" id="quizSelectAll"> 全选</label>
-<button class="btn-danger btn-small" id="quizBatchDelete">批量删除</button>
-<span class="hint" id="quizBatchHint"></span>
-</div>
-<div id="quizList" class="list"></div>
-</div>
-</section>
- 
-<!-- 设置 -->
-<section id="panel-settings" class="panel">
-<div class="card">
-<h2>☁️ Gist 云端同步</h2>
-<label>GitHub Token（Classic Token，需勾选 gist 权限）</label>
-<input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" />
-<label>Gist ID</label>
-<input type="text" id="gistId" placeholder="例如：a1b2c3d4e5f6…" />
-<div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-<button class="btn-secondary" id="createGistBtn">自动创建空 Gist</button>
-<button class="btn-primary" id="saveToCloudBtn">保存到云端</button>
-<button class="btn-secondary" id="restoreFromCloudBtn">从云端恢复</button>
-<button class="btn-danger" id="clearAllBtn">清空本地全部数据</button>
-</div>
-<p class="hint">
-手动创建：访问 <a href="https://gist.github.com/" target="_blank">https://gist.github.com/</a>，
-新建一个 Secret Gist，文件名建议为 <code>vocaloid-japanese-workbench.json</code>，
-然后从地址栏复制 Gist ID（/gists/ 后的那串字符）填入上方。
-</p>
-<div id="settingsStatus" class="status"></div>
-</div>
-</section>
-</main>
- 
-<!-- 确认弹窗 -->
-<div class="modal-mask" id="confirmMask">
-<div class="modal">
-<h3 id="confirmTitle">确认操作</h3>
-<div id="confirmBody" style="font-size:0.9rem;"></div>
-<div class="actions">
-<button class="btn-secondary" id="confirmCancel">取消</button>
-<button class="btn-danger" id="confirmOk">确认删除</button>
-</div>
-</div>
-</div>
- 
-<script>
-// ============================================================
-// 数据层（统一 DB 门面）
-// ============================================================
-const STORAGE_KEY = 'vjw_data_v2';
-const SETTINGS_KEY = 'vjw_settings';
-const GIST_FILENAME = 'vocaloid-japanese-workbench.json';
- 
-function uid() {
-return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-}
- 
-const DB = {
-_raw: null,
-load() {
-try {
-const raw = localStorage.getItem(STORAGE_KEY);
-if (raw) {
-const p = JSON.parse(raw);
-this._raw = {
-songs: Array.isArray(p.songs) ? p.songs : [],
-words: Array.isArray(p.words) ? p.words : [],
-grammar: Array.isArray(p.grammar) ? p.grammar : [],
-quizzes: Array.isArray(p.quizzes) ? p.quizzes : []
-};
-} else {
-this._raw = { songs: [], words: [], grammar: [], quizzes: [] };
-}
-} catch (e) {
-console.error('DB load error', e);
-this._raw = { songs: [], words: [], grammar: [], quizzes: [] };
-}
-return this._raw;
-},
-save() {
-localStorage.setItem(STORAGE_KEY, JSON.stringify(this._raw));
-},
- 
-// ---- songs ----
-listSongs() { return this._raw.songs.slice().sort((a,b)=>b.createdAt-a.createdAt); },
-getSong(id) { return this._raw.songs.find(s => s.id === id); },
-addSong(song) {
-const item = { id: uid(), createdAt: Date.now(), title:'', artist:'', original:'', translation:'', ...song };
-this._raw.songs.push(item);
-this.save();
-return item;
-},
-deleteSong(id) {
-// 级联删除所有关联数据
-const before = this._raw.words.length + this._raw.grammar.length + this._raw.quizzes.length;
-this._raw.words   = this._raw.words.filter(w => w.songId !== id);
-this._raw.grammar = this._raw.grammar.filter(g => g.songId !== id);
-this._raw.quizzes = this._raw.quizzes.filter(q => q.songId !== id);
-this._raw.songs   = this._raw.songs.filter(s => s.id !== id);
-this.save();
-return before - (this._raw.words.length + this._raw.grammar.length + this._raw.quizzes.length);
-},
- 
-// ---- words ----
-listWords() { return this._raw.words.slice().sort((a,b)=>b.createdAt-a.createdAt); },
-addWord(w) {
-const item = { id: uid(), createdAt: Date.now(), songId:'', word:'', reading:'', meaning:'', example:'', ...w };
-this._raw.words.push(item);
-this.save();
-return item;
-},
-deleteWords(ids) {
-const set = new Set(ids);
-this._raw.words = this._raw.words.filter(w => !set.has(w.id));
-this.save();
-},
- 
-// ---- grammar ----
-listGrammar() { return this._raw.grammar.slice().sort((a,b)=>b.createdAt-a.createdAt); },
-addGrammar(g) {
-const item = { id: uid(), createdAt: Date.now(), songId:'', pattern:'', meaning:'', example:'', ...g };
-this._raw.grammar.push(item);
-this.save();
-return item;
-},
-deleteGrammar(ids) {
-const set = new Set(ids);
-this._raw.grammar = this._raw.grammar.filter(g => !set.has(g.id));
-this.save();
-},
- 
-// ---- quizzes ----
-listQuizzes() { return this._raw.quizzes.slice().sort((a,b)=>b.createdAt-a.createdAt); },
-addQuiz(q) {
-const item = { id: uid(), createdAt: Date.now(), songId:'', question:'', answer:'', ...q };
-this._raw.quizzes.push(item);
-this.save();
-return item;
-},
-deleteQuizzes(ids) {
-const set = new Set(ids);
-this._raw.quizzes = this._raw.quizzes.filter(q => !set.has(q.id));
-this.save();
-},
- 
-// 全量
-exportAll() { return JSON.parse(JSON.stringify(this._raw)); },
-importAll(data) {
-this._raw = {
-songs: Array.isArray(data.songs) ? data.songs : [],
-words: Array.isArray(data.words) ? data.words : [],
-grammar: Array.isArray(data.grammar) ? data.grammar : [],
-quizzes: Array.isArray(data.quizzes) ? data.quizzes : []
-};
-this.save();
-},
-clearAll() {
-this._raw = { songs: [], words: [], grammar: [], quizzes: [] };
-this.save();
-}
-};
- 
-const Settings = {
-load() {
-try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || { token:'', gistId:'' }; }
-catch { return { token:'', gistId:'' }; }
-},
-save(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
-};
- 
-DB.load();
-let settings = Settings.load();
- 
-// ============================================================
-// 路由（hashchange）
-// ============================================================
-const routes = ['workbench', 'lyrics', 'words', 'grammar', 'quiz', 'settings'];
-function getRoute() {
-const hash = (location.hash || '#workbench').replace('#','');
-return routes.includes(hash) ? hash : 'workbench';
-}
-function switchRoute(r) {
-location.hash = '#' + r;
-}
-function renderRoute() {
-const r = getRoute();
-document.querySelectorAll('#navTabs .tab').forEach(t => {
-t.classList.toggle('active', t.dataset.route === r);
-});
-document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-const panel = document.getElementById('panel-' + r);
-if (panel) panel.classList.add('active');
- 
-// 每个路由的刷新钩子
-if (r === 'workbench') refreshWorkbench();
-if (r === 'lyrics')    renderLyrics();
-if (r === 'words')     renderWords();
-if (r === 'grammar')   renderGrammar();
-if (r === 'quiz')      renderQuiz();
-if (r === 'settings')  renderSettings();
-}
-document.querySelectorAll('#navTabs .tab').forEach(tab => {
-tab.addEventListener('click', () => switchRoute(tab.dataset.route));
-});
-window.addEventListener('hashchange', renderRoute);
-window.addEventListener('DOMContentLoaded', renderRoute);
- 
-// ============================================================
-// 工具函数
-// ============================================================
-function escapeHtml(s) {
-if (s == null) return '';
-return String(s)
-.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-.replace(/"/g, '&quot;');
-}
-function songTitleById(id) {
-const s = DB.getSong(id);
-return s ? s.title : '(未关联)';
-}
-function confirmDialog({title, body, okText='确认', cancelText='取消', danger=true}) {
-return new Promise(resolve => {
-document.getElementById('confirmTitle').textContent = title;
-document.getElementById('confirmBody').innerHTML = body;
-const ok = document.getElementById('confirmOk');
-ok.textContent = okText;
-ok.className = danger ? 'btn-danger' : 'btn-primary';
-const mask = document.getElementById('confirmMask');
-mask.classList.add('show');
-const cleanup = () => {
-mask.classList.remove('show');
-ok.removeEventListener('click', onOk);
-document.getElementById('confirmCancel').removeEventListener('click', onCancel);
-};
-const onOk = () => { cleanup(); resolve(true); };
-const onCancel = () => { cleanup(); resolve(false); };
-ok.addEventListener('click', onOk);
-document.getElementById('confirmCancel').addEventListener('click', onCancel);
-});
-}
- 
-// ============================================================
-// 工作台
-// ============================================================
-const PROMPT = (songTitle) => `你是一位资深日语老师，擅长分析术力口（Vocaloid）歌词${songTitle ? `（本次歌曲：${songTitle}）` : ''}。请结合歌曲的剧情与隐喻，按以下步骤分析我接下来提供的歌词：
- 
+「てもいい」の意味は？ | 表示许可"></textarea>
+        <button class="btn-primary" id="classifyBtn" style="margin-top:0.75rem;">智能分类并入库</button>
+        <div id="importStatus" class="status"></div>
+      </div>
+    </section>
+
+    <!-- ==================== 歌词本（只展示） ==================== -->
+    <section id="panel-lyrics" class="panel">
+      <div class="card">
+        <div class="page-header">
+          <h2>📖 歌词本 <span class="stats" id="lyricsStats"></span></h2>
+        </div>
+        <div id="lyricsList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- ==================== 单词本 ==================== -->
+    <section id="panel-words" class="panel">
+      <div class="card">
+        <div class="page-header">
+          <h2>📚 单词本 <span class="stats" id="wordsStats"></span></h2>
+        </div>
+        <div class="toolbar">
+          <label><input type="checkbox" id="wordsSelectAll"> 全选</label>
+          <button class="btn-danger btn-small" id="wordsBatchDelete">批量删除</button>
+          <span class="hint" id="wordsBatchHint"></span>
+        </div>
+        <div id="wordsList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- ==================== 语法库 ==================== -->
+    <section id="panel-grammar" class="panel">
+      <div class="card">
+        <div class="page-header">
+          <h2>🧩 语法库 <span class="stats" id="grammarStats"></span></h2>
+        </div>
+        <div class="toolbar">
+          <label><input type="checkbox" id="grammarSelectAll"> 全选</label>
+          <button class="btn-danger btn-small" id="grammarBatchDelete">批量删除</button>
+          <span class="hint" id="grammarBatchHint"></span>
+        </div>
+        <div id="grammarList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- ==================== 题库 ==================== -->
+    <section id="panel-quiz" class="panel">
+      <div class="card">
+        <div class="page-header">
+          <h2>✍️ 题库 <span class="stats" id="quizStats"></span></h2>
+        </div>
+        <div class="toolbar">
+          <label><input type="checkbox" id="quizSelectAll"> 全选</label>
+          <button class="btn-danger btn-small" id="quizBatchDelete">批量删除</button>
+          <span class="hint" id="quizBatchHint"></span>
+        </div>
+        <div id="quizList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- ==================== 设置 ==================== -->
+    <section id="panel-settings" class="panel">
+      <div class="card">
+        <h2>☁️ Gist 云端同步</h2>
+        <label>GitHub Token（Classic Token，需勾选 gist 权限）</label>
+        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" />
+        <label>Gist ID</label>
+        <input type="text" id="gistId" placeholder="例如：a1b2c3d4e5f6…" />
+        <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button class="btn-secondary" id="createGistBtn">自动创建空 Gist</button>
+          <button class="btn-primary" id="saveToCloudBtn">保存到云端</button>
+          <button class="btn-secondary" id="restoreFromCloudBtn">从云端恢复</button>
+          <button class="btn-danger" id="clearAllBtn">清空本地全部数据</button>
+        </div>
+        <p class="hint">
+          手动创建：访问 <a href="https://gist.github.com/" target="_blank">https://gist.github.com/</a>，
+          新建一个 Secret Gist，文件名建议为 <code>vocaloid-japanese-workbench.json</code>，
+          然后从地址栏复制 Gist ID（/gists/ 后的那串字符）填入上方。
+        </p>
+        <div id="settingsStatus" class="status"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 确认弹窗 -->
+  <div class="modal-mask" id="confirmMask">
+    <div class="modal">
+      <h3 id="confirmTitle">确认操作</h3>
+      <div id="confirmBody" style="font-size:0.9rem;"></div>
+      <div class="actions">
+        <button class="btn-secondary" id="confirmCancel">取消</button>
+        <button class="btn-danger" id="confirmOk">确认删除</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       数据层（统一 DB 门面，所有实体通过 songId 强关联）
+       ============================================================ */
+    const STORAGE_KEY = 'vjw_data_v3';
+    const SETTINGS_KEY = 'vjw_settings';
+    const GIST_FILENAME = 'vocaloid-japanese-workbench.json';
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    const DB = {
+      _raw: null,
+      empty() { return { songs: [], words: [], grammar: [], quizzes: [] }; },
+      load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const p = raw ? JSON.parse(raw) : null;
+          this._raw = p ? {
+            songs: Array.isArray(p.songs) ? p.songs : [],
+            words: Array.isArray(p.words) ? p.words : [],
+            grammar: Array.isArray(p.grammar) ? p.grammar : [],
+            quizzes: Array.isArray(p.quizzes) ? p.quizzes : []
+          } : this.empty();
+        } catch (e) {
+          console.error('DB load error', e);
+          this._raw = this.empty();
+        }
+        // 兼容旧数据：补齐 lyricsPairs 字段
+        this._raw.songs.forEach(s => {
+          if (!Array.isArray(s.lyricsPairs)) s.lyricsPairs = [];
+        });
+        return this._raw;
+      },
+      save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(this._raw)); },
+
+      /* ---------- 歌曲 ---------- */
+      listSongs() { return this._raw.songs.slice().sort((a, b) => b.createdAt - a.createdAt); },
+      getSong(id) { return this._raw.songs.find(s => s.id === id); },
+      addSong(song) {
+        const item = {
+          id: uid(), createdAt: Date.now(),
+          title: '', artist: '', original: '', translation: '', lyricsPairs: [],
+          ...song
+        };
+        if (!Array.isArray(item.lyricsPairs)) item.lyricsPairs = [];
+        this._raw.songs.push(item);
+        this.save();
+        return item;
+      },
+      updateSong(id, patch) {
+        const s = this.getSong(id);
+        if (!s) return null;
+        Object.assign(s, patch);
+        this.save();
+        return s;
+      },
+      deleteSong(id) {
+        const before = this._raw.words.length + this._raw.grammar.length + this._raw.quizzes.length;
+        this._raw.words = this._raw.words.filter(w => w.songId !== id);
+        this._raw.grammar = this._raw.grammar.filter(g => g.songId !== id);
+        this._raw.quizzes = this._raw.quizzes.filter(q => q.songId !== id);
+        this._raw.songs = this._raw.songs.filter(s => s.id !== id);
+        this.save();
+        return before - (this._raw.words.length + this._raw.grammar.length + this._raw.quizzes.length);
+      },
+
+      /* ---------- 生词 ----------
+         单词 | 读音 | 词性 | 词根 | 释义 | 例句 | 例句翻译 */
+      listWords() { return this._raw.words.slice().sort((a, b) => b.createdAt - a.createdAt); },
+      addWord(w) {
+        const item = {
+          id: uid(), createdAt: Date.now(), songId: '',
+          word: '', reading: '', pos: '', root: '', meaning: '', example: '', exampleCn: '',
+          ...w
+        };
+        this._raw.words.push(item);
+        this.save();
+        return item;
+      },
+      deleteWords(ids) {
+        const set = new Set(ids);
+        this._raw.words = this._raw.words.filter(w => !set.has(w.id));
+        this.save();
+      },
+
+      /* ---------- 语法 ----------
+         语法 | 接续 | 意思 | 用法解析 | 例句 | 例句翻译 */
+      listGrammar() { return this._raw.grammar.slice().sort((a, b) => b.createdAt - a.createdAt); },
+      addGrammar(g) {
+        const item = {
+          id: uid(), createdAt: Date.now(), songId: '',
+          pattern: '', connection: '', meaning: '', usage: '', example: '', exampleCn: '',
+          ...g
+        };
+        this._raw.grammar.push(item);
+        this.save();
+        return item;
+      },
+      deleteGrammar(ids) {
+        const set = new Set(ids);
+        this._raw.grammar = this._raw.grammar.filter(g => !set.has(g.id));
+        this.save();
+      },
+
+      /* ---------- 习题 ---------- */
+      listQuizzes() { return this._raw.quizzes.slice().sort((a, b) => b.createdAt - a.createdAt); },
+      addQuiz(q) {
+        const item = { id: uid(), createdAt: Date.now(), songId: '', question: '', answer: '', ...q };
+        this._raw.quizzes.push(item);
+        this.save();
+        return item;
+      },
+      deleteQuizzes(ids) {
+        const set = new Set(ids);
+        this._raw.quizzes = this._raw.quizzes.filter(q => !set.has(q.id));
+        this.save();
+      },
+
+      /* ---------- 全量 ---------- */
+      exportAll() { return JSON.parse(JSON.stringify(this._raw)); },
+      importAll(data) {
+        this._raw = {
+          songs: Array.isArray(data.songs) ? data.songs : [],
+          words: Array.isArray(data.words) ? data.words : [],
+          grammar: Array.isArray(data.grammar) ? data.grammar : [],
+          quizzes: Array.isArray(data.quizzes) ? data.quizzes : []
+        };
+        this._raw.songs.forEach(s => { if (!Array.isArray(s.lyricsPairs)) s.lyricsPairs = []; });
+        this.save();
+      },
+      clearAll() { this._raw = this.empty(); this.save(); }
+    };
+
+    const Settings = {
+      load() {
+        try {
+          const s = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+          return s || { token: '', gistId: '' };
+        } catch (e) {
+          return { token: '', gistId: '' };
+        }
+      },
+      save(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+    };
+
+    DB.load();
+    let settings = Settings.load();
+
+    /* ============================================================
+       路由
+       ============================================================ */
+    const routes = ['workbench', 'lyrics', 'words', 'grammar', 'quiz', 'settings'];
+
+    function getRoute() {
+      const hash = (location.hash || '#workbench').replace('#', '');
+      return routes.indexOf(hash) !== -1 ? hash : 'workbench';
+    }
+    function switchRoute(r) { location.hash = '#' + r; }
+
+    function renderRoute() {
+      const r = getRoute();
+      document.querySelectorAll('#navTabs .tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.route === r);
+      });
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      const panel = document.getElementById('panel-' + r);
+      if (panel) panel.classList.add('active');
+
+      if (r === 'workbench') refreshWorkbench();
+      if (r === 'lyrics')    renderLyrics();
+      if (r === 'words')     renderWords();
+      if (r === 'grammar')   renderGrammar();
+      if (r === 'quiz')      renderQuiz();
+      if (r === 'settings')  renderSettings();
+    }
+
+    document.querySelectorAll('#navTabs .tab').forEach(tab => {
+      tab.addEventListener('click', () => switchRoute(tab.dataset.route));
+    });
+    window.addEventListener('hashchange', renderRoute);
+
+    /* ============================================================
+       工具
+       ============================================================ */
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    function songTitleById(id) {
+      const s = DB.getSong(id);
+      return s ? s.title : '(未关联)';
+    }
+    function field(label, value) {
+      if (!value) return '';
+      return `<div class="field"><span class="field-label">${label}</span><span class="field-value">${escapeHtml(value)}</span></div>`;
+    }
+    function confirmDialog(opts) {
+      return new Promise(resolve => {
+        const mask = document.getElementById('confirmMask');
+        document.getElementById('confirmTitle').textContent = opts.title;
+        document.getElementById('confirmBody').innerHTML = opts.body || '';
+        const ok = document.getElementById('confirmOk');
+        const cancel = document.getElementById('confirmCancel');
+        ok.textContent = opts.okText || '确认';
+        ok.className = opts.danger === false ? 'btn-primary' : 'btn-danger';
+        mask.classList.add('show');
+
+        const cleanup = () => {
+          mask.classList.remove('show');
+          ok.removeEventListener('click', onOk);
+          cancel.removeEventListener('click', onCancel);
+        };
+        const onOk = () => { cleanup(); resolve(true); };
+        const onCancel = () => { cleanup(); resolve(false); };
+        ok.addEventListener('click', onOk);
+        cancel.addEventListener('click', onCancel);
+      });
+    }
+
+    /* ============================================================
+       解析规则
+       ============================================================ */
+    // 取出某个【分区】的正文，遇到下一个【…】或文本结尾即停止
+    function extractSection(text, marker) {
+      const start = text.indexOf(marker);
+      if (start === -1) return '';
+      const after = text.slice(start + marker.length);
+      const nextIdx = after.search(/【[^】]+】/);
+      return nextIdx === -1 ? after : after.slice(0, nextIdx);
+    }
+    function sectionLines(text, marker) {
+      return extractSection(text, marker)
+        .split(/\n+/)
+        .map(l => l.trim())
+        .filter(Boolean);
+    }
+    // 按竖线拆分并按索引取段，缺失返回空字符串
+    function pick(arr, i) {
+      const v = arr[i];
+      return v == null ? '' : String(v).trim();
+    }
+
+    /**
+     * 生词：单词 | 读音 | 词性 | 词根 | 释义 | 例句 | 例句翻译
+     * arr[0] 单词  arr[1] 读音  arr[2] 词性  arr[3] 词根
+     * arr[4] 释义  arr[5] 例句  arr[6] 例句翻译
+     */
+    function parseWordLine(line) {
+      const arr = line.split('|');
+      const word = pick(arr, 0);
+      if (!word) return null;
+      return {
+        word: word,
+        reading: pick(arr, 1),
+        pos: pick(arr, 2),
+        root: pick(arr, 3),
+        meaning: pick(arr, 4),
+        example: pick(arr, 5),
+        exampleCn: pick(arr, 6)
+      };
+    }
+
+    /**
+     * 语法：语法 | 接续 | 意思 | 用法解析 | 例句 | 例句翻译
+     * arr[0] 语法  arr[1] 接续  arr[2] 意思
+     * arr[3] 用法解析  arr[4] 例句  arr[5] 例句翻译
+     */
+    function parseGrammarLine(line) {
+      const arr = line.split('|');
+      const pattern = pick(arr, 0);
+      if (!pattern) return null;
+      return {
+        pattern: pattern,
+        connection: pick(arr, 1),
+        meaning: pick(arr, 2),
+        usage: pick(arr, 3),
+        example: pick(arr, 4),
+        exampleCn: pick(arr, 5)
+      };
+    }
+
+    // 习题：问题 | 答案
+    function parseQuizLine(line) {
+      const arr = line.split('|');
+      const question = pick(arr, 0);
+      if (!question) return null;
+      return { question: question, answer: pick(arr, 1) };
+    }
+
+    /**
+     * 歌词对照：日文：xxx / 中文：xxx 逐句配对
+     * 同时兼容“日文：xxx 中文：xxx”写在同一行的情况
+     */
+    function parseLyricsPairs(sectionText) {
+      if (!sectionText) return [];
+      const normalized = sectionText.replace(/(日文|中文)\s*[：:]/g, '\n$1：');
+      const lines = normalized.split(/\n+/).map(l => l.trim()).filter(Boolean);
+      const pairs = [];
+      let pendingJp = null;
+
+      lines.forEach(line => {
+        const mJp = line.match(/^日文\s*[：:]\s*(.*)$/);
+        const mCn = line.match(/^中文\s*[：:]\s*(.*)$/);
+        if (mJp) {
+          if (pendingJp !== null) pairs.push({ jp: pendingJp, cn: '' });
+          pendingJp = mJp[1].trim();
+        } else if (mCn) {
+          if (pendingJp !== null) {
+            pairs.push({ jp: pendingJp, cn: mCn[1].trim() });
+            pendingJp = null;
+          } else {
+            pairs.push({ jp: '', cn: mCn[1].trim() });
+          }
+        }
+      });
+      if (pendingJp !== null) pairs.push({ jp: pendingJp, cn: '' });
+      return pairs;
+    }
+
+    /* ============================================================
+       工作台
+       ============================================================ */
+    const PROMPT = (songTitle) =>
+      `你是一位资深日语老师，擅长分析术力口（Vocaloid）歌词${songTitle ? `（本次歌曲：${songTitle}）` : ''}。请结合歌曲的剧情与隐喻，按以下步骤分析我接下来提供的歌词：
+
 1. 先给出直译，再给出意译，并进行交叉校对说明；
-2. 提取其中的生词，每行用竖线分隔：单词 | 读音 | 中文含义 | 例句
-3. 提取核心语法点，每行用竖线分隔：语法点 | 用法说明 | 例句
-4. 针对上述语法点出 3-5 道练习题，每行用竖线分隔：问题 | 答案
- 
-最后，请务必严格按以下纯文本块格式输出（用【方括号】作为分区标记，不要用 Markdown 列表或 * 号）：
- 
+2. 逐句提取歌词对照；
+3. 提取生词、核心语法，并为语法点出练习题。
+
+输出必须严格使用竖线 | 分隔，字段顺序与数量不得增减：
+
+【歌词对照】
+日文：……
+中文：……
+（每句一行日文、一行中文，逐句交替）
+
 【生词】
-单词 | 读音 | 中文含义 | 例句
-…
- 
+单词 | 读音 | 词性 | 词根 | 释义 | 例句 | 例句翻译
+（共 7 段，缺一不可）
+
 【语法】
-语法点 | 用法说明 | 例句
-…
- 
+语法 | 接续 | 意思 | 用法解析 | 例句 | 例句翻译
+（共 6 段，缺一不可）
+
 【习题】
 问题 | 答案
-…
- 
+
+不要使用 Markdown 表格、列表符号或 * 号，只输出上述纯文本块。
+
 以下是需要分析的歌词：`;
- 
-function refreshWorkbench() {
-const songs = DB.listSongs();
-const wbSel = document.getElementById('wbSongSelect');
-const impSel = document.getElementById('importSongSelect');
-const opts = ['<option value="">-- 不关联 --</option>',
-...songs.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.title)}</option>`)];
-wbSel.innerHTML = opts.join('');
-impSel.innerHTML = songs.length
-? ['<option value="">-- 请选择要关联的歌曲 --</option>',
-...songs.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.title)}</option>`)].join('')
-: '<option value="">-- 请先在歌词本添加歌曲 --</option>';
-}
- 
-document.getElementById('analyzeBtn').addEventListener('click', () => {
-const lyrics = document.getElementById('lyricsInput').value.trim();
-const songId = document.getElementById('wbSongSelect').value;
-if (!lyrics) return alert('请先粘贴歌词');
-const song = DB.getSong(songId);
-const full = PROMPT(song && song.title) + '\n\n' + lyrics;
-const url = 'https://chat.deepseek.com/?q=' + encodeURIComponent(full);
-window.open(url, '_blank');
-});
- 
-document.getElementById('copyPromptBtn').addEventListener('click', async () => {
-const songId = document.getElementById('wbSongSelect').value;
-const song = DB.getSong(songId);
-const lyrics = document.getElementById('lyricsInput').value.trim();
-const full = PROMPT(song && song.title) + (lyrics ? '\n\n' + lyrics : '');
-try {
-await navigator.clipboard.writeText(full);
-alert('已复制到剪贴板 ✅');
-} catch {
-alert('复制失败，请手动选中复制');
-}
-});
- 
-// ---- 解析 & 导入 ----
-function extractSection(text, marker) {
-const start = text.indexOf(marker);
-if (start === -1) return [];
-const after = text.slice(start + marker.length);
-// 直到下一个 【...】 或文本末尾
-const next = after.search(/【[^】]+】/);
-const section = next === -1 ? after : after.slice(0, next);
-return section.split(/\n+/).map(l => l.trim()).filter(Boolean);
-}
- 
-function splitByPipe(line) {
-return line.split('|').map(s => s.trim());
-}
- 
-document.getElementById('classifyBtn').addEventListener('click', () => {
-const text = document.getElementById('analysisInput').value;
-const songId = document.getElementById('importSongSelect').value;
-const statusEl = document.getElementById('importStatus');
-statusEl.textContent = '';
-statusEl.className = 'status';
- 
-if (!text.trim()) { alert('请先粘贴 AI 分析结果'); return; }
-if (!songId) { alert('请选择要关联的歌曲'); return; }
- 
-let w=0, g=0, q=0;
- 
-const wordLines = extractSection(text, '【生词】');
-wordLines.forEach(line => {
-const parts = splitByPipe(line);
-if (parts[0]) {
-DB.addWord({ songId, word: parts[0], reading: parts[1]||'', meaning: parts[2]||'', example: parts[3]||'' });
-w++;
-}
-});
- 
-const gramLines = extractSection(text, '【语法】');
-gramLines.forEach(line => {
-const parts = splitByPipe(line);
-if (parts[0]) {
-DB.addGrammar({ songId, pattern: parts[0], meaning: parts[1]||'', example: parts[2]||'' });
-g++;
-}
-});
- 
-const quizLines = extractSection(text, '【习题】');
-quizLines.forEach(line => {
-const parts = splitByPipe(line);
-if (parts[0]) {
-DB.addQuiz({ songId, question: parts[0], answer: parts[1]||'' });
-q++;
-}
-});
- 
-document.getElementById('analysisInput').value = '';
-statusEl.textContent = `✅ 导入完成：生词 ${w} 条、语法 ${g} 条、习题 ${q} 条。`;
-statusEl.classList.add('ok');
-});
- 
-// ============================================================
-// 歌词本
-// ============================================================
-document.getElementById('addSongBtn').addEventListener('click', () => {
-const title = document.getElementById('songTitle').value.trim();
-if (!title) return alert('请填写歌名');
-DB.addSong({
-title,
-artist: document.getElementById('songArtist').value.trim(),
-original: document.getElementById('songOriginal').value.trim(),
-translation: document.getElementById('songTranslation').value.trim()
-});
-['songTitle','songArtist','songOriginal','songTranslation'].forEach(id => document.getElementById(id).value = '');
-renderLyrics();
-refreshWorkbench();
-});
- 
-function renderLyrics() {
-const songs = DB.listSongs();
-document.getElementById('lyricsStats').textContent = `（共 ${songs.length} 首）`;
-const list = document.getElementById('lyricsList');
-list.innerHTML = '';
-if (!songs.length) { list.innerHTML = '<div class="empty">还没有歌曲，先在上方添加一首吧～</div>'; return; }
- 
-songs.forEach(s => {
-const counts = {
-words: DB.listWords().filter(w => w.songId === s.id).length,
-grammar: DB.listGrammar().filter(g => g.songId === s.id).length,
-quizzes: DB.listQuizzes().filter(q => q.songId === s.id).length
-};
-const el = document.createElement('div');
-el.className = 'item';
-el.innerHTML = `
-<div class="item-row">
-<span class="arrow">▶</span>
-<div class="item-main">
-<div class="item-title">${escapeHtml(s.title)} ${s.artist ? `<span class="song-tag">${escapeHtml(s.artist)}</span>` : ''}</div>
-<div class="item-sub">📚 ${counts.words} 词 · 🧩 ${counts.grammar} 语法 · ✍️ ${counts.quizzes} 题</div>
-</div>
-<div class="item-actions">
-<button class="btn-danger btn-sm song-del" data-id="${s.id}">删除</button>
-</div>
-</div>
-<div class="item-body">
-${s.original ? `<div class="field"><span class="field-label">原词：</span><div style="white-space:pre-wrap;margin-top:2px;">${escapeHtml(s.original)}</div></div>` : ''}
-${s.translation ? `<div class="field"><span class="field-label">翻译：</span><div style="white-space:pre-wrap;margin-top:2px;">${escapeHtml(s.translation)}</div></div>` : ''}
-<div class="field" style="color:var(--muted);font-size:0.78rem;">创建时间：${new Date(s.createdAt).toLocaleString()}</div>
-</div>
-`;
-el.querySelector('.item-row').addEventListener('click', (e) => {
-if (e.target.closest('.song-del')) return;
-el.classList.toggle('expanded');
-});
-el.querySelector('.song-del').addEventListener('click', async (e) => {
-e.stopPropagation();
-const removed = counts.words + counts.grammar + counts.quizzes;
-const ok = await confirmDialog({
-title: `删除歌曲「${s.title}」？`,
-body: `此操作将<strong>级联删除</strong>该歌曲下的所有数据：<br/>` +
-`• 生词 ${counts.words} 条<br/>• 语法 ${counts.grammar} 条<br/>• 习题 ${counts.quizzes} 道<br/>` +
-`共 ${removed} 条数据，且<strong>无法恢复</strong>（除非云端有备份）。`,
-okText: '确认删除',
-danger: true
-});
-if (!ok) return;
-DB.deleteSong(s.id);
-renderLyrics();
-refreshWorkbench();
-});
-list.appendChild(el);
-});
-}
- 
-// ============================================================
-// 单词本
-// ============================================================
-let wordsChecked = new Set();
-function renderWords() {
-const all = DB.listWords();
-document.getElementById('wordsStats').textContent = `（共 ${all.length} 条）`;
-const list = document.getElementById('wordsList');
-list.innerHTML = '';
-if (!all.length) { list.innerHTML = '<div class="empty">单词本空空如也，去工作台导入吧～</div>'; updateBatchHint('words'); return; }
-all.forEach(w => {
-const checked = wordsChecked.has(w.id) ? 'checked' : '';
-const el = document.createElement('div');
-el.className = 'item';
-el.innerHTML = `
-<div class="item-row">
-<input type="checkbox" class="checkbox word-cb" data-id="${w.id}" ${checked}>
-<span class="arrow">▶</span>
-<div class="item-main">
-<div class="item-title">${escapeHtml(w.word)}</div>
-<div class="item-sub">${w.reading ? '【'+escapeHtml(w.reading)+'】 ' : ''}${escapeHtml(w.meaning)} · <span class="song-tag">${escapeHtml(songTitleById(w.songId))}</span></div>
-</div>
-</div>
-<div class="item-body">
-${w.reading ? `<div class="field"><span class="field-label">读音：</span>${escapeHtml(w.reading)}</div>` : ''}
-${w.meaning ? `<div class="field"><span class="field-label">释义：</span>${escapeHtml(w.meaning)}</div>` : ''}
-${w.example ? `<div class="field"><span class="field-label">例句：</span><div style="white-space:pre-wrap;margin-top:2px;">${escapeHtml(w.example)}</div></div>` : ''}
-</div>
-`;
-el.querySelector('.item-row').addEventListener('click', (e) => {
-if (e.target.closest('.word-cb')) return;
-el.classList.toggle('expanded');
-});
-el.querySelector('.word-cb').addEventListener('change', (e) => {
-e.stopPropagation();
-if (e.target.checked) wordsChecked.add(w.id); else wordsChecked.delete(w.id);
-updateBatchHint('words');
-});
-list.appendChild(el);
-});
-document.getElementById('wordsSelectAll').checked = all.length > 0 && all.every(x => wordsChecked.has(x.id));
-updateBatchHint('words');
-}
- 
-document.getElementById('wordsSelectAll').addEventListener('change', (e) => {
-const all = DB.listWords();
-if (e.target.checked) all.forEach(x => wordsChecked.add(x.id));
-else all.forEach(x => wordsChecked.delete(x.id));
-renderWords();
-});
-document.getElementById('wordsBatchDelete').addEventListener('click', async () => {
-if (!wordsChecked.size) { alert('请先勾选要删除的条目'); return; }
-const ok = await confirmDialog({
-title: `批量删除 ${wordsChecked.size} 条生词？`,
-body: '此操作不可撤销。',
-okText: '确认删除',
-danger: true
-});
-if (!ok) return;
-DB.deleteWords([...wordsChecked]);
-wordsChecked.clear();
-renderWords();
-});
- 
-// ============================================================
-// 语法库
-// ============================================================
-let grammarChecked = new Set();
-function renderGrammar() {
-const all = DB.listGrammar();
-document.getElementById('grammarStats').textContent = `（共 ${all.length} 条）`;
-const list = document.getElementById('grammarList');
-list.innerHTML = '';
-if (!all.length) { list.innerHTML = '<div class="empty">语法库空空如也～</div>'; updateBatchHint('grammar'); return; }
-all.forEach(g => {
-const checked = grammarChecked.has(g.id) ? 'checked' : '';
-const el = document.createElement('div');
-el.className = 'item';
-el.innerHTML = `
-<div class="item-row">
-<input type="checkbox" class="checkbox gram-cb" data-id="${g.id}" ${checked}>
-<span class="arrow">▶</span>
-<div class="item-main">
-<div class="item-title">${escapeHtml(g.pattern)}</div>
-<div class="item-sub">${escapeHtml(g.meaning)} · <span class="song-tag">${escapeHtml(songTitleById(g.songId))}</span></div>
-</div>
-</div>
-<div class="item-body">
-${g.meaning ? `<div class="field"><span class="field-label">用法：</span><div style="white-space:pre-wrap;margin-top:2px;">${escapeHtml(g.meaning)}</div></div>` : ''}
-${g.example ? `<div class="field"><span class="field-label">例句：</span><div style="white-space:pre-wrap;margin-top:2px;">${escapeHtml(g.example)}</div></div>` : ''}
-</div>
-`;
-el.querySelector('.item-row').addEventListener('click', (e) => {
-if (e.target.closest('.gram-cb')) return;
-el.classList.toggle('expanded');
-});
-el.querySelector('.gram-cb').addEventListener('change', (e) => {
-e.stopPropagation();
-if (e.target.checked) grammarChecked.add(g.id); else grammarChecked.delete(g.id);
-updateBatchHint('grammar');
-});
-list.appendChild(el);
-});
-document.getElementById('grammarSelectAll').checked = all.length > 0 && all.every(x => grammarChecked.has(x.id));
-updateBatchHint('grammar');
-}
-document.getElementById('grammarSelectAll').addEventListener('change', (e) => {
-const all = DB.listGrammar();
-if (e.target.checked) all.forEach(x => grammarChecked.add(x.id));
-else all.forEach(x => grammarChecked.delete(x.id));
-renderGrammar();
-});
-document.getElementById('grammarBatchDelete').addEventListener('click', async () => {
-if (!grammarChecked.size) { alert('请先勾选要删除的条目'); return; }
-const ok = await confirmDialog({
-title: `批量删除 ${grammarChecked.size} 条语法？`, body: '此操作不可撤销。',
-okText: '确认删除', danger: true
-});
-if (!ok) return;
-DB.deleteGrammar([...grammarChecked]);
-grammarChecked.clear();
-renderGrammar();
-});
- 
-// ============================================================
-// 题库
-// ============================================================
-let quizChecked = new Set();
-function renderQuiz() {
-const all = DB.listQuizzes();
-document.getElementById('quizStats').textContent = `（共 ${all.length} 道）`;
-const list = document.getElementById('quizList');
-list.innerHTML = '';
-if (!all.length) { list.innerHTML = '<div class="empty">还没有题目～</div>'; updateBatchHint('quiz'); return; }
-all.forEach(q => {
-const checked = quizChecked.has(q.id) ? 'checked' : '';
-const el = document.createElement('div');
-el.className = 'item';
-el.innerHTML = `
-<div class="item-row">
-<input type="checkbox" class="checkbox quiz-cb" data-id="${q.id}" ${checked}>
-<span class="arrow">▶</span>
-<div class="item-main">
-<div class="item-title">Q: ${escapeHtml(q.question)}</div>
-<div class="item-sub"><span class="song-tag">${escapeHtml(songTitleById(q.songId))}</span></div>
-</div>
-</div>
-<div class="item-body">
-${q.answer ? `<div class="field"><span class="field-label">答案：</span><div style="white-space:pre-wrap;margin-top:2px;">${escapeHtml(q.answer)}</div></div>` : ''}
-</div>
-`;
-el.querySelector('.item-row').addEventListener('click', (e) => {
-if (e.target.closest('.quiz-cb')) return;
-el.classList.toggle('expanded');
-});
-el.querySelector('.quiz-cb').addEventListener('change', (e) => {
-e.stopPropagation();
-if (e.target.checked) quizChecked.add(q.id); else quizChecked.delete(q.id);
-updateBatchHint('quiz');
-});
-list.appendChild(el);
-});
-document.getElementById('quizSelectAll').checked = all.length > 0 && all.every(x => quizChecked.has(x.id));
-updateBatchHint('quiz');
-}
-document.getElementById('quizSelectAll').addEventListener('change', (e) => {
-const all = DB.listQuizzes();
-if (e.target.checked) all.forEach(x => quizChecked.add(x.id));
-else all.forEach(x => quizChecked.delete(x.id));
-renderQuiz();
-});
-document.getElementById('quizBatchDelete').addEventListener('click', async () => {
-if (!quizChecked.size) { alert('请先勾选要删除的条目'); return; }
-const ok = await confirmDialog({
-title: `批量删除 ${quizChecked.size} 道习题？`, body: '此操作不可撤销。',
-okText: '确认删除', danger: true
-});
-if (!ok) return;
-DB.deleteQuizzes([...quizChecked]);
-quizChecked.clear();
-renderQuiz();
-});
- 
-// ============================================================
-// 设置 / Gist
-// ============================================================
-function updateBatchHint(which) {
-const map = { words: wordsChecked, grammar: grammarChecked, quiz: quizChecked };
-const id = { words:'wordsBatchHint', grammar:'grammarBatchHint', quiz:'quizBatchHint' }[which];
-const n = map[which].size;
-document.getElementById(id).textContent = n ? `已选 ${n} 条` : '';
-}
- 
-function renderSettings() {
-document.getElementById('githubToken').value = settings.token || '';
-document.getElementById('gistId').value = settings.gistId || '';
-}
-function setStatus(msg, isErr=false) {
-const el = document.getElementById('settingsStatus');
-el.textContent = msg;
-el.className = 'status ' + (isErr ? 'err' : 'ok');
-}
-function readSettings() {
-settings.token = document.getElementById('githubToken').value.trim();
-settings.gistId = document.getElementById('gistId').value.trim();
-Settings.save(settings);
-}
- 
-document.getElementById('createGistBtn').addEventListener('click', async () => {
-readSettings();
-if (!settings.token) return setStatus('请先填写 GitHub Token', true);
-setStatus('正在创建 Gist…');
-try {
-const res = await fetch('https://api.github.com/gists', {
-method: 'POST',
-headers: {
-'Accept': 'application/vnd.github+json',
-'Authorization': 'token ' + settings.token,
-'Content-Type': 'application/json'
-},
-body: JSON.stringify({
-description: 'Vocaloid Japanese Workbench sync',
-public: false,
-files: { [GIST_FILENAME]: { content: JSON.stringify(DB.exportAll(), null, 2) } }
-})
-});
-const json = await res.json();
-if (!res.ok) throw new Error(json.message || '创建失败');
-settings.gistId = json.id;
-Settings.save(settings);
-document.getElementById('gistId').value = json.id;
-setStatus('✅ Gist 创建成功，ID 已填入：' + json.id);
-} catch (err) {
-setStatus('❌ 创建失败：' + err.message, true);
-}
-});
- 
-document.getElementById('saveToCloudBtn').addEventListener('click', async () => {
-readSettings();
-if (!settings.token || !settings.gistId) return setStatus('请填写 Token 和 Gist ID', true);
-setStatus('正在保存到云端…');
-try {
-const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
-method: 'PATCH',
-headers: {
-'Accept': 'application/vnd.github+json',
-'Authorization': 'token ' + settings.token,
-'Content-Type': 'application/json'
-},
-body: JSON.stringify({
-description: 'Vocaloid Japanese Workbench sync',
-files: { [GIST_FILENAME]: { content: JSON.stringify(DB.exportAll(), null, 2) } }
-})
-});
-const json = await res.json();
-if (!res.ok) throw new Error(json.message || '保存失败');
-setStatus('✅ 保存成功，服务器时间：' + new Date(json.updated_at).toLocaleString());
-} catch (err) {
-setStatus('❌ 保存失败：' + err.message, true);
-}
-});
- 
-document.getElementById('restoreFromCloudBtn').addEventListener('click', async () => {
-readSettings();
-if (!settings.token || !settings.gistId) return setStatus('请填写 Token 和 Gist ID', true);
-setStatus('正在从云端恢复…');
-try {
-const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
-headers: {
-'Accept': 'application/vnd.github+json',
-'Authorization': 'token ' + settings.token
-}
-});
-const json = await res.json();
-if (!res.ok) throw new Error(json.message || '拉取失败');
-const file = json.files && json.files[GIST_FILENAME];
-if (!file) throw new Error('Gist 中未找到文件 ' + GIST_FILENAME);
-DB.importAll(JSON.parse(file.content));
-// 清空选择状态，刷新所有页面
-wordsChecked.clear(); grammarChecked.clear(); quizChecked.clear();
-renderRoute();
-setStatus('✅ 恢复成功，云端更新时间：' + new Date(json.updated_at).toLocaleString());
-} catch (err) {
-setStatus('❌ 恢复失败：' + err.message, true);
-}
-});
- 
-document.getElementById('clearAllBtn').addEventListener('click', async () => {
-const total = DB.listSongs().length + DB.listWords().length + DB.listGrammar().length + DB.listQuizzes().length;
-const ok = await confirmDialog({
-title: '⚠️ 清空所有本地数据？',
-body: `歌曲/生词/语法/习题共 <strong>${total}</strong> 条将被全部清除。<br/>如果云端已有备份，之后可以用「从云端恢复」找回。`,
-okText: '全部清空',
-danger: true
-});
-if (!ok) return;
-DB.clearAll();
-wordsChecked.clear(); grammarChecked.clear(); quizChecked.clear();
-renderRoute();
-setStatus('✅ 本地数据已清空');
-});
- 
-// 初始渲染
-renderRoute();
-</script>
+
+    function songOptions(withPlaceholder) {
+      const songs = DB.listSongs();
+      const head = `<option value="">${withPlaceholder}</option>`;
+      return [head, ...songs.map(s =>
+        `<option value="${escapeHtml(s.id)}">${escapeHtml(s.title)}</option>`
+      )].join('');
+    }
+
+    function refreshWorkbench() {
+      const wbSel = document.getElementById('wbSongSelect');
+      const impSel = document.getElementById('importSongSelect');
+      const wbVal = wbSel.value;
+      const impVal = impSel.value;
+
+      wbSel.innerHTML = songOptions('-- 不关联，仅临时分析 --');
+      impSel.innerHTML = DB.listSongs().length
+        ? songOptions('-- 请选择要关联的歌曲 --')
+        : '<option value="">-- 请先新建歌曲 --</option>';
+
+      if (wbVal) wbSel.value = wbVal;
+      if (impVal) impSel.value = impVal;
+    }
+
+    function setStatus(id, msg, isErr) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.className = 'status ' + (isErr ? 'err' : 'ok');
+    }
+
+    // ---- 新建歌曲 ----
+    document.getElementById('addSongBtn').addEventListener('click', () => {
+      const title = document.getElementById('songTitle').value.trim();
+      if (!title) { alert('请填写歌名'); return; }
+
+      const pairsText = document.getElementById('songLyricsPairs').value;
+      const pairs = parseLyricsPairs(pairsText);
+
+      const song = DB.addSong({
+        title: title,
+        artist: document.getElementById('songArtist').value.trim(),
+        original: document.getElementById('songOriginal').value.trim(),
+        translation: document.getElementById('songTranslation').value.trim(),
+        lyricsPairs: pairs
+      });
+
+      ['songTitle', 'songArtist', 'songLyricsPairs', 'songOriginal', 'songTranslation']
+        .forEach(id => { document.getElementById(id).value = ''; });
+
+      setStatus('addSongStatus', `✅ 已加入歌词本：${song.title}（歌词对照 ${pairs.length} 句）`, false);
+      refreshWorkbench();
+    });
+
+    // ---- 分析 ----
+    document.getElementById('analyzeBtn').addEventListener('click', () => {
+      const lyrics = document.getElementById('lyricsInput').value.trim();
+      if (!lyrics) { alert('请先粘贴歌词'); return; }
+      const song = DB.getSong(document.getElementById('wbSongSelect').value);
+      const full = PROMPT(song && song.title) + '\n\n' + lyrics;
+      window.open('https://chat.deepseek.com/?q=' + encodeURIComponent(full), '_blank');
+    });
+
+    document.getElementById('copyPromptBtn').addEventListener('click', () => {
+      const song = DB.getSong(document.getElementById('wbSongSelect').value);
+      const lyrics = document.getElementById('lyricsInput').value.trim();
+      const full = PROMPT(song && song.title) + (lyrics ? '\n\n' + lyrics : '');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(full).then(
+          () => alert('提示词已复制到剪贴板 ✅'),
+          () => alert('复制失败，请手动选中复制')
+        );
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = full;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert('提示词已复制到剪贴板 ✅');
+      }
+    });
+
+    // ---- 导入 AI 结果 ----
+    document.getElementById('classifyBtn').addEventListener('click', () => {
+      const text = document.getElementById('analysisInput').value;
+      const songId = document.getElementById('importSongSelect').value;
+
+      if (!text.trim()) { alert('请先粘贴 AI 分析结果'); return; }
+      if (!songId) { alert('请选择要关联的歌曲'); return; }
+
+      let w = 0, g = 0, q = 0;
+      let pairCount = 0;
+
+      // 歌词对照 -> 覆盖当前歌曲
+      const lyricSection = extractSection(text, '【歌词对照】');
+      if (lyricSection.trim()) {
+        const pairs = parseLyricsPairs(lyricSection);
+        if (pairs.length) {
+          DB.updateSong(songId, { lyricsPairs: pairs });
+          pairCount = pairs.length;
+        }
+      }
+
+      // 生词
+      sectionLines(text, '【生词】').forEach(line => {
+        const item = parseWordLine(line);
+        if (item) { DB.addWord(Object.assign({ songId: songId }, item)); w++; }
+      });
+
+      // 语法
+      sectionLines(text, '【语法】').forEach(line => {
+        const item = parseGrammarLine(line);
+        if (item) { DB.addGrammar(Object.assign({ songId: songId }, item)); g++; }
+      });
+
+      // 习题
+      sectionLines(text, '【习题】').forEach(line => {
+        const item = parseQuizLine(line);
+        if (item) { DB.addQuiz(Object.assign({ songId: songId }, item)); q++; }
+      });
+
+      if (w + g + q + pairCount === 0) {
+        setStatus('importStatus', '❌ 未识别到有效内容，请检查是否包含【歌词对照】【生词】【语法】【习题】标签。', true);
+        return;
+      }
+
+      document.getElementById('analysisInput').value = '';
+      setStatus(
+        'importStatus',
+        `✅ 导入完成：歌词对照 ${pairCount} 句、生词 ${w} 条、语法 ${g} 条、习题 ${q} 条。`,
+        false
+      );
+    });
+
+    /* ============================================================
+       歌词本（仅展示）
+       ============================================================ */
+    function renderLyrics() {
+      const songs = DB.listSongs();
+      document.getElementById('lyricsStats').textContent = `（共 ${songs.length} 首）`;
+      const list = document.getElementById('lyricsList');
+      list.innerHTML = '';
+
+      if (!songs.length) {
+        list.innerHTML = '<div class="empty">还没有歌曲，去工作台新建一首吧～</div>';
+        return;
+      }
+
+      songs.forEach(s => {
+        const words = DB.listWords().filter(w => w.songId === s.id).length;
+        const grammar = DB.listGrammar().filter(g => g.songId === s.id).length;
+        const quizzes = DB.listQuizzes().filter(q => q.songId === s.id).length;
+        const pairs = Array.isArray(s.lyricsPairs) ? s.lyricsPairs : [];
+
+        let lyricHtml = '';
+        if (pairs.length) {
+          lyricHtml = pairs.map(p => `
+            <div class="lyric-pair">
+              <div class="lyric-jp">${escapeHtml(p.jp)}</div>
+              <div class="lyric-cn">${escapeHtml(p.cn)}</div>
+            </div>
+          `).join('');
+        } else {
+          lyricHtml = `
+            ${s.original ? `<div class="field"><span class="field-label">原词</span><div class="lyric-raw">${escapeHtml(s.original)}</div></div>` : ''}
+            ${s.translation ? `<div class="field"><span class="field-label">翻译</span><div class="lyric-raw">${escapeHtml(s.translation)}</div></div>` : ''}
+            ${!s.original && !s.translation ? '<div class="hint">暂无歌词，可在工作台导入【歌词对照】。</div>' : ''}
+          `;
+        }
+
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.innerHTML = `
+          <div class="item-row">
+            <span class="arrow">▶</span>
+            <div class="item-main">
+              <div class="item-title">${escapeHtml(s.title)}${s.artist ? `<span class="song-tag">${escapeHtml(s.artist)}</span>` : ''}</div>
+              <div class="item-sub">📚 ${words} 词 · 🧩 ${grammar} 语法 · ✍️ ${quizzes} 题 · 📝 ${pairs.length} 句对照</div>
+            </div>
+            <div class="item-actions">
+              <button class="btn-danger btn-small song-del" data-id="${s.id}">删除</button>
+            </div>
+          </div>
+          <div class="item-body">${lyricHtml}</div>
+        `;
+
+        el.querySelector('.item-row').addEventListener('click', (e) => {
+          if (e.target.closest('.song-del')) return;
+          el.classList.toggle('expanded');
+        });
+
+        el.querySelector('.song-del').addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const total = words + grammar + quizzes;
+          const ok = await confirmDialog({
+            title: `删除歌曲「${s.title}」？`,
+            body: `将<strong>级联删除</strong>该歌曲下的所有关联数据：<br/>` +
+                  `• 生词 ${words} 条<br/>• 语法 ${grammar} 条<br/>• 习题 ${quizzes} 道<br/>` +
+                  `合计 ${total} 条，且<strong>无法恢复</strong>。`,
+            okText: '确认删除',
+            danger: true
+          });
+          if (!ok) return;
+          DB.deleteSong(s.id);
+          renderLyrics();
+          refreshWorkbench();
+        });
+
+        list.appendChild(el);
+      });
+    }
+
+    /* ============================================================
+       单词本
+       ============================================================ */
+    let wordsChecked = new Set();
+
+    function renderWords() {
+      const all = DB.listWords();
+      document.getElementById('wordsStats').textContent = `（共 ${all.length} 条）`;
+      const list = document.getElementById('wordsList');
+      list.innerHTML = '';
+
+      // 清理已不存在的勾选项
+      const ids = new Set(all.map(x => x.id));
+      wordsChecked.forEach(id => { if (!ids.has(id)) wordsChecked.delete(id); });
+
+      if (!all.length) {
+        list.innerHTML = '<div class="empty">单词本还是空的，去工作台导入吧～</div>';
+        document.getElementById('wordsSelectAll').checked = false;
+        updateBatchHint('words');
+        return;
+      }
+
+      all.forEach(w => {
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.innerHTML = `
+          <div class="item-row">
+            <input type="checkbox" class="checkbox word-cb" ${wordsChecked.has(w.id) ? 'checked' : ''}>
+            <span class="arrow">▶</span>
+            <div class="item-main">
+              <div class="item-title">${escapeHtml(w.word)}${w.pos ? `<span class="song-tag">${escapeHtml(w.pos)}</span>` : ''}</div>
+              <div class="item-sub">${w.reading ? `【${escapeHtml(w.reading)}】` : ''}${escapeHtml(w.meaning)}${w.songId ? ` · ${escapeHtml(songTitleById(w.songId))}` : ''}</div>
+            </div>
+          </div>
+          <div class="item-body">
+            ${field('读音', w.reading)}
+            ${field('词性', w.pos)}
+            ${field('词根', w.root)}
+            ${field('释义', w.meaning)}
+            ${field('例句', w.example)}
+            ${field('例句翻译', w.exampleCn)}
+            ${field('关联歌曲', w.songId ? songTitleById(w.songId) : '')}
+          </div>
+        `;
+        el.querySelector('.item-row').addEventListener('click', (e) => {
+          if (e.target.closest('.word-cb')) return;
+          el.classList.toggle('expanded');
+        });
+        el.querySelector('.word-cb').addEventListener('change', (e) => {
+          e.stopPropagation();
+          if (e.target.checked) wordsChecked.add(w.id); else wordsChecked.delete(w.id);
+          syncSelectAll('words');
+          updateBatchHint('words');
+        });
+        list.appendChild(el);
+      });
+
+      document.getElementById('wordsSelectAll').checked = all.length > 0 && all.every(x => wordsChecked.has(x.id));
+      updateBatchHint('words');
+    }
+
+    /* ============================================================
+       语法库
+       ============================================================ */
+    let grammarChecked = new Set();
+
+    function renderGrammar() {
+      const all = DB.listGrammar();
+      document.getElementById('grammarStats').textContent = `（共 ${all.length} 条）`;
+      const list = document.getElementById('grammarList');
+      list.innerHTML = '';
+
+      const ids = new Set(all.map(x => x.id));
+      grammarChecked.forEach(id => { if (!ids.has(id)) grammarChecked.delete(id); });
+
+      if (!all.length) {
+        list.innerHTML = '<div class="empty">语法库还是空的～</div>';
+        document.getElementById('grammarSelectAll').checked = false;
+        updateBatchHint('grammar');
+        return;
+      }
+
+      all.forEach(g => {
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.innerHTML = `
+          <div class="item-row">
+            <input type="checkbox" class="checkbox gram-cb" ${grammarChecked.has(g.id) ? 'checked' : ''}>
+            <span class="arrow">▶</span>
+            <div class="item-main">
+              <div class="item-title">${escapeHtml(g.pattern)}</div>
+              <div class="item-sub">${escapeHtml(g.meaning)}${g.songId ? ` · ${escapeHtml(songTitleById(g.songId))}` : ''}</div>
+            </div>
+          </div>
+          <div class="item-body">
+            ${field('接续', g.connection)}
+            ${field('意思', g.meaning)}
+            ${field('用法解析', g.usage)}
+            ${field('例句', g.example)}
+            ${field('例句翻译', g.exampleCn)}
+            ${field('关联歌曲', g.songId ? songTitleById(g.songId) : '')}
+          </div>
+        `;
+        el.querySelector('.item-row').addEventListener('click', (e) => {
+          if (e.target.closest('.gram-cb')) return;
+          el.classList.toggle('expanded');
+        });
+        el.querySelector('.gram-cb').addEventListener('change', (e) => {
+          e.stopPropagation();
+          if (e.target.checked) grammarChecked.add(g.id); else grammarChecked.delete(g.id);
+          syncSelectAll('grammar');
+          updateBatchHint('grammar');
+        });
+        list.appendChild(el);
+      });
+
+      document.getElementById('grammarSelectAll').checked = all.length > 0 && all.every(x => grammarChecked.has(x.id));
+      updateBatchHint('grammar');
+    }
+
+    /* ============================================================
+       题库
+       ============================================================ */
+    let quizChecked = new Set();
+
+    function renderQuiz() {
+      const all = DB.listQuizzes();
+      document.getElementById('quizStats').textContent = `（共 ${all.length} 道）`;
+      const list = document.getElementById('quizList');
+      list.innerHTML = '';
+
+      const ids = new Set(all.map(x => x.id));
+      quizChecked.forEach(id => { if (!ids.has(id)) quizChecked.delete(id); });
+
+      if (!all.length) {
+        list.innerHTML = '<div class="empty">题库还是空的～</div>';
+        document.getElementById('quizSelectAll').checked = false;
+        updateBatchHint('quiz');
+        return;
+      }
+
+      all.forEach(q => {
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.innerHTML = `
+          <div class="item-row">
+            <input type="checkbox" class="checkbox quiz-cb" ${quizChecked.has(q.id) ? 'checked' : ''}>
+            <span class="arrow">▶</span>
+            <div class="item-main">
+              <div class="item-title">Q: ${escapeHtml(q.question)}</div>
+              <div class="item-sub">${q.songId ? escapeHtml(songTitleById(q.songId)) : ''}</div>
+            </div>
+          </div>
+          <div class="item-body">
+            ${field('答案', q.answer)}
+            ${field('关联歌曲', q.songId ? songTitleById(q.songId) : '')}
+          </div>
+        `;
+        el.querySelector('.item-row').addEventListener('click', (e) => {
+          if (e.target.closest('.quiz-cb')) return;
+          el.classList.toggle('expanded');
+        });
+        el.querySelector('.quiz-cb').addEventListener('change', (e) => {
+          e.stopPropagation();
+          if (e.target.checked) quizChecked.add(q.id); else quizChecked.delete(q.id);
+          syncSelectAll('quiz');
+          updateBatchHint('quiz');
+        });
+        list.appendChild(el);
+      });
+
+      document.getElementById('quizSelectAll').checked = all.length > 0 && all.every(x => quizChecked.has(x.id));
+      updateBatchHint('quiz');
+    }
+
+    /* ============================================================
+       多选 / 批量删除
+       ============================================================ */
+    const checkedMap = {
+      words: wordsChecked,
+      grammar: grammarChecked,
+      quiz: quizChecked
+    };
+    const listFns = {
+      words: DB.listWords.bind(DB),
+      grammar: DB.listGrammar.bind(DB),
+      quiz: DB.listQuizzes.bind(DB)
+    };
+
+    function updateBatchHint(which) {
+      const el = document.getElementById(which + 'BatchHint');
+      const n = checkedMap[which].size;
+      el.textContent = n ? `已选 ${n} 条` : '';
+    }
+
+    function syncSelectAll(which) {
+      const all = listFns[which]();
+      const checked = checkedMap[which];
+      document.getElementById(which + 'SelectAll').checked =
+        all.length > 0 && all.every(x => checked.has(x.id));
+    }
+
+    ['words', 'grammar', 'quiz'].forEach(which => {
+      document.getElementById(which + 'SelectAll').addEventListener('change', (e) => {
+        const checked = checkedMap[which];
+        if (e.target.checked) listFns[which]().forEach(x => checked.add(x.id));
+        else checked.clear();
+        if (which === 'words') renderWords();
+        if (which === 'grammar') renderGrammar();
+        if (which === 'quiz') renderQuiz();
+      });
+
+      document.getElementById(which + 'BatchDelete').addEventListener('click', async () => {
+        const checked = checkedMap[which];
+        if (!checked.size) { alert('请先勾选要删除的条目'); return; }
+        const label = { words: '生词', grammar: '语法', quiz: '习题' }[which];
+        const ok = await confirmDialog({
+          title: `批量删除 ${checked.size} 条${label}？`,
+          body: '仅删除已勾选的条目，此操作不可撤销。',
+          okText: '确认删除',
+          danger: true
+        });
+        if (!ok) return;
+        const ids = Array.from(checked);
+        if (which === 'words') DB.deleteWords(ids);
+        if (which === 'grammar') DB.deleteGrammar(ids);
+        if (which === 'quiz') DB.deleteQuizzes(ids);
+        checked.clear();
+        if (which === 'words') renderWords();
+        if (which === 'grammar') renderGrammar();
+        if (which === 'quiz') renderQuiz();
+      });
+    });
+
+    /* ============================================================
+       设置 / Gist
+       ============================================================ */
+    function renderSettings() {
+      document.getElementById('githubToken').value = settings.token || '';
+      document.getElementById('gistId').value = settings.gistId || '';
+    }
+    function setSettingsStatus(msg, isErr) {
+      const el = document.getElementById('settingsStatus');
+      el.textContent = msg;
+      el.className = 'status ' + (isErr ? 'err' : 'ok');
+    }
+    function readSettings() {
+      settings.token = document.getElementById('githubToken').value.trim();
+      settings.gistId = document.getElementById('gistId').value.trim();
+      Settings.save(settings);
+    }
+
+    document.getElementById('createGistBtn').addEventListener('click', async () => {
+      readSettings();
+      if (!settings.token) return setSettingsStatus('请先填写 GitHub Token', true);
+      setSettingsStatus('正在创建 Gist…');
+      try {
+        const res = await fetch('https://api.github.com/gists', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': 'token ' + settings.token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            description: 'Vocaloid Japanese Workbench sync',
+            public: false,
+            files: { [GIST_FILENAME]: { content: JSON.stringify(DB.exportAll(), null, 2) } }
+          })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || '创建失败');
+        settings.gistId = json.id;
+        Settings.save(settings);
+        document.getElementById('gistId').value = json.id;
+        setSettingsStatus('✅ Gist 创建成功，ID 已填入：' + json.id);
+      } catch (err) {
+        setSettingsStatus('❌ 创建失败：' + err.message, true);
+      }
+    });
+
+    document.getElementById('saveToCloudBtn').addEventListener('click', async () => {
+      readSettings();
+      if (!settings.token || !settings.gistId) return setSettingsStatus('请填写 Token 和 Gist ID', true);
+      setSettingsStatus('正在保存到云端…');
+      try {
+        const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
+          method: 'PATCH',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': 'token ' + settings.token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            description: 'Vocaloid Japanese Workbench sync',
+            files: { [GIST_FILENAME]: { content: JSON.stringify(DB.exportAll(), null, 2) } }
+          })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || '保存失败');
+        setSettingsStatus('✅ 保存成功，服务器时间：' + new Date(json.updated_at).toLocaleString());
+      } catch (err) {
+        setSettingsStatus('❌ 保存失败：' + err.message, true);
+      }
+    });
+
+    document.getElementById('restoreFromCloudBtn').addEventListener('click', async () => {
+      readSettings();
+      if (!settings.token || !settings.gistId) return setSettingsStatus('请填写 Token 和 Gist ID', true);
+      setSettingsStatus('正在从云端恢复…');
+      try {
+        const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': 'token ' + settings.token
+          }
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || '拉取失败');
+        const file = json.files && json.files[GIST_FILENAME];
+        if (!file) throw new Error('Gist 中未找到文件 ' + GIST_FILENAME);
+        DB.importAll(JSON.parse(file.content));
+        wordsChecked.clear();
+        grammarChecked.clear();
+        quizChecked.clear();
+        renderRoute();
+        setSettingsStatus('✅ 恢复成功，云端更新时间：' + new Date(json.updated_at).toLocaleString());
+      } catch (err) {
+        setSettingsStatus('❌ 恢复失败：' + err.message, true);
+      }
+    });
+
+    document.getElementById('clearAllBtn').addEventListener('click', async () => {
+      const total = DB.listSongs().length + DB.listWords().length
+        + DB.listGrammar().length + DB.listQuizzes().length;
+      const ok = await confirmDialog({
+        title: '⚠️ 清空所有本地数据？',
+        body: `歌曲 / 生词 / 语法 / 习题共 <strong>${total}</strong> 条将被全部清除。<br/>` +
+              `如果云端已有备份，之后可用「从云端恢复」找回。`,
+        okText: '全部清空',
+        danger: true
+      });
+      if (!ok) return;
+      DB.clearAll();
+      wordsChecked.clear();
+      grammarChecked.clear();
+      quizChecked.clear();
+      renderRoute();
+      setSettingsStatus('✅ 本地数据已清空');
+    });
+
+    /* 启动 */
+    renderRoute();
+  </script>
 </body>
 </html>
