@@ -293,8 +293,7 @@
           <button class="btn-secondary" id="copyPromptBtn">复制提示词模板</button>
         </div>
         <p class="hint">
-          点击按钮会在新标签页打开 DeepSeek，并把预设提示词 + 歌词写入 URL 参数；
-          若内容过长请使用「复制提示词模板」手动粘贴。
+          点击「一键去 DeepSeek 分析」会把完整提示词 + 歌词复制到剪贴板，并在新标签页打开 DeepSeek 首页，粘贴即可使用；不会再把内容拼进 URL，避免 414 报错。
         </p>
       </div>
 
@@ -859,33 +858,51 @@
       refreshWorkbench();
     });
 
-    // ---- 分析 ----
-    document.getElementById('analyzeBtn').addEventListener('click', () => {
+    // ---- 剪贴板复制封装：优先 Clipboard API，回退 execCommand ----
+async function copyToClipboard(text) {
+if (navigator.clipboard && window.isSecureContext) {
+try {
+await navigator.clipboard.writeText(text);
+return true;
+} catch (e) { /* fall through to legacy path */ }
+}
+try {
+const ta = document.createElement('textarea');
+ta.value = text;
+ta.style.position = 'fixed';
+ta.style.top = '-1000px';
+ta.style.opacity = '0';
+document.body.appendChild(ta);
+ta.select();
+const ok = document.execCommand('copy');
+document.body.removeChild(ta);
+return ok;
+} catch (e) {
+return false;
+}
+}
+ 
+// ---- 分析：复制提示词 + 歌词到剪贴板，然后打开 DeepSeek 首页 ----
+document.getElementById('analyzeBtn').addEventListener('click', async () => {
       const lyrics = document.getElementById('lyricsInput').value.trim();
       if (!lyrics) { alert('请先粘贴歌词'); return; }
       const song = DB.getSong(document.getElementById('wbSongSelect').value);
       const full = PROMPT(song && song.title) + '\n\n' + lyrics;
-      window.open('https://chat.deepseek.com/?q=' + encodeURIComponent(full), '_blank');
-    });
+       
+const copyOk = await copyToClipboard(full);
+if (!copyOk) {
+alert('⚠️ 自动复制失败，请手动点击「复制提示词模板」复制，再去 DeepSeek 粘贴。');
+} else {
+alert('✅ 提示词 + 歌词已复制到剪贴板，即将打开 DeepSeek，请在输入框中粘贴。');
+}
+window.open('https://chat.deepseek.com/', '_blank');
 
-    document.getElementById('copyPromptBtn').addEventListener('click', () => {
+    document.getElementById('copyPromptBtn').addEventListener('click', async () => {
       const song = DB.getSong(document.getElementById('wbSongSelect').value);
       const lyrics = document.getElementById('lyricsInput').value.trim();
       const full = PROMPT(song && song.title) + (lyrics ? '\n\n' + lyrics : '');
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(full).then(
-          () => alert('提示词已复制到剪贴板 ✅'),
-          () => alert('复制失败，请手动选中复制')
-        );
-      } else {
-        const ta = document.createElement('textarea');
-        ta.value = full;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        alert('提示词已复制到剪贴板 ✅');
-      }
+      const ok = await copyToClipboard(full);
+alert(ok ? '提示词已复制到剪贴板 ✅' : '复制失败，请手动选中复制');
     });
 
     // ---- 导入 AI 结果 ----
