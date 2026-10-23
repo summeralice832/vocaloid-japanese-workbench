@@ -149,11 +149,11 @@
     .item.expanded .item-body { display: block; }
     .item-body .field { margin-bottom: 0.5rem; }
     .item-body .field-label {
-      display: inline-block; min-width: 4.2em;
+      display: inline-block; min-width: 5.4em;
       color: var(--muted); font-size: 0.78rem;
       vertical-align: top;
     }
-    .item-body .field-value { display: inline-block; white-space: pre-wrap; max-width: calc(100% - 5em); }
+    .item-body .field-value { display: inline-block; white-space: pre-wrap; max-width: calc(100% - 6em); }
     .item-body .block-value { white-space: pre-wrap; margin-top: 0.15rem; }
 
     .song-tag {
@@ -165,6 +165,34 @@
       border-radius: 999px;
       margin-left: 0.3rem;
     }
+
+    /* 题型标签 */
+    .type-tag {
+      display: inline-block;
+      background: #fef3c7;
+      color: #b45309;
+      font-size: 0.72rem;
+      padding: 0.05rem 0.5rem;
+      border-radius: 999px;
+      margin-right: 0.45rem;
+      vertical-align: middle;
+    }
+
+    /* 收纳表单 */
+    .acc {
+      margin-top: 0.9rem;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 0.5rem 0.75rem;
+      background: #fafbfd;
+    }
+    .acc summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .acc[open] summary { margin-bottom: 0.25rem; }
 
     /* 歌词对照 */
     .lyric-pair {
@@ -224,22 +252,32 @@
     <!-- ==================== 工作台（输入与操作中心） ==================== -->
     <section id="panel-workbench" class="panel">
       <div class="card">
-        <h2>➕ 新建歌曲</h2>
-        <label>歌名</label>
-        <input type="text" id="songTitle" placeholder="例如：ロストワンの号哭" />
-        <label>歌手 / P主（可选）</label>
-        <input type="text" id="songArtist" placeholder="例如：じん" />
-        <label>歌词对照（可选，支持 AI 输出格式：日文：… / 中文：…）</label>
-        <textarea id="songLyricsPairs" placeholder="日文：今日も世界は回ってる
+        <div class="page-header" style="margin-bottom:0;">
+          <h2>🎵 歌曲</h2>
+          <button class="btn-primary btn-small" id="toggleAddSongBtn">+ 新建歌曲</button>
+        </div>
+        <div id="addSongPanel" style="display:none;">
+          <label>歌名</label>
+          <input type="text" id="songTitle" placeholder="例如：ロストワンの号哭" />
+          <label>歌手 / P主（可选）</label>
+          <input type="text" id="songArtist" placeholder="例如：じん" />
+          <label>歌词对照（主输入，AI 格式：日文：… / 中文：…）</label>
+          <textarea id="songLyricsPairs" placeholder="日文：今日も世界は回ってる
 中文：今天世界也在转动
 日文：それでも僕は歌うよ
 中文：即便如此我也要歌唱"></textarea>
-        <label>原词（可选，无对照时的备用展示）</label>
-        <textarea id="songOriginal" placeholder="日文原词…"></textarea>
-        <label>翻译（可选）</label>
-        <textarea id="songTranslation" placeholder="中文翻译…"></textarea>
-        <button class="btn-primary" id="addSongBtn" style="margin-top:0.75rem;">加入歌词本</button>
-        <div id="addSongStatus" class="status"></div>
+
+          <details class="acc">
+            <summary>备用：原词 / 翻译（无对照时使用）</summary>
+            <label>原词</label>
+            <textarea id="songOriginal" placeholder="日文原词…"></textarea>
+            <label>翻译</label>
+            <textarea id="songTranslation" placeholder="中文翻译…"></textarea>
+          </details>
+
+          <button class="btn-primary" id="addSongBtn" style="margin-top:0.75rem;">加入歌词本</button>
+          <div id="addSongStatus" class="status"></div>
+        </div>
       </div>
 
       <div class="card">
@@ -266,20 +304,21 @@
         <select id="importSongSelect">
           <option value="">-- 请先新建歌曲 --</option>
         </select>
-        <label>AI 输出原文（需包含 【歌词对照】【生词】【语法】【习题】 分区）</label>
+        <label>AI 输出原文（需包含 【歌词对照】【生词】【语法】【语法题】 分区）</label>
         <textarea id="analysisInput" style="min-height:220px;" placeholder="示例：
 【歌词对照】
 日文：今日も世界は回ってる
 中文：今天世界也在转动
 
 【生词】
-歌う | うたう | 动词 | 歌 | 唱歌 | 彼女は歌うのが好きです。 | 她喜欢唱歌。
+歌う | うたう | 动词 | 歌う → 歌 | 唱歌 | 彼女は歌うのが好きです。 | 她喜欢唱歌。
 
 【语法】
 ～てもいい | 动词て形 + もいい | 表示许可 | 表示可以做某事 | ここに座ってもいいですか？ | 可以坐这里吗？
 
-【习题】
-「てもいい」の意味は？ | 表示许可 | 「てもいい」表示允许做某事。"></textarea>
+【语法题】
+单选题 | 「てもいい」表示什么？ | A. 禁止 B. 许可 C. 必须 | B | てもいい 表示允许做某事。
+填空题 | ここに座って（　）いいですか？ | 无 | も | 固定搭配 ～てもいい。"></textarea>
         <button class="btn-primary" id="classifyBtn" style="margin-top:0.75rem;">智能分类并入库</button>
         <div id="importStatus" class="status"></div>
       </div>
@@ -489,7 +528,7 @@
       addQuiz(q) {
         const item = {
           id: uid(), createdAt: Date.now(), songId: '',
-          question: '', answer: '', explanation: '',
+          type: '', question: '', options: '', answer: '', explanation: '',
           ...q
         };
         this._raw.quizzes.push(item);
@@ -670,18 +709,29 @@
     }
 
     /**
-     * 习题：题目 | 答案 | 解析
-     * arr[0] 题目  arr[1] 答案  arr[2] 解析
+     * 语法题：题型 | 题目 | 选项 | 答案 | 解析
+     * arr[0] 题型  arr[1] 题目  arr[2] 选项  arr[3] 答案  arr[4] 解析
+     * 兼容旧格式：题目 | 答案 | 解析
      */
     function parseQuizLine(line) {
       const arr = line.split('|');
-      const question = pick(arr, 0);
-      if (!question) return null;
-      return {
-        question: question,
-        answer: pick(arr, 1),
-        explanation: pick(arr, 2)
-      };
+      const parts = arr.length >= 4
+        ? {
+            type: pick(arr, 0),
+            question: pick(arr, 1),
+            options: pick(arr, 2),
+            answer: pick(arr, 3),
+            explanation: pick(arr, 4)
+          }
+        : {
+            type: '',
+            question: pick(arr, 0),
+            options: '',
+            answer: pick(arr, 1),
+            explanation: pick(arr, 2)
+          };
+      if (!parts.question) return null;
+      return parts;
     }
 
     /**
@@ -718,30 +768,27 @@
        工作台
        ============================================================ */
     const PROMPT = (songTitle) =>
-      `你是一位资深日语老师，擅长分析术力口（Vocaloid）歌词${songTitle ? `（本次歌曲：${songTitle}）` : ''}。请结合歌曲的剧情与隐喻，按以下步骤分析我接下来提供的歌词：
+      `你是一位资深日语老师，擅长分析术力口（Vocaloid）歌词（本次歌曲：${songTitle || '未命名'}）。请结合歌曲的剧情与隐喻，按以下步骤分析我接下来提供的歌词：
 
-1. 先给出直译，再给出意译，并进行交叉校对说明；
-2. 逐句提取歌词对照；
-3. 提取生词、核心语法，并为语法点出练习题。
+【分析要求】
+1. 全景标注：必须细致到每个长句！不要只挑几个词。尽量多提取生词（尤其是动词变形、复合词）和核心语法点。
+2. 派生词解释：对于提取的生词，如果有派生词或词根关联，请解释（如：食べる → 食べ物）。
+3. 结合剧情：交叉校对直译和意译，必须结合术曲的隐喻和剧情。
 
-输出必须严格使用竖线 | 分隔，字段顺序与数量不得增减：
-
+【输出格式（请严格用竖线分隔，不要换行）】
 【歌词对照】
-日文：……
-中文：……
-（每句一行日文、一行中文，逐句交替）
+日文：xxxxx
+中文：xxxxx
 
 【生词】
-单词 | 读音 | 词性 | 词根 | 释义 | 例句 | 例句翻译
-（共 7 段，缺一不可）
+单词 | 读音 | 词性 | 派生词/词根 | 释义 | 例句 | 例句翻译
 
 【语法】
 语法 | 接续 | 意思 | 用法解析 | 例句 | 例句翻译
-（共 6 段，缺一不可）
 
-【习题】
-题目 | 答案 | 解析
-（共 3 段：题目、答案、解析）
+【语法题】
+请针对上述语法出 5 道题，题型必须包含：单选题、填空题、句子翻译题。
+格式：题型 | 题目 | 选项（非单选填无） | 答案 | 解析
 
 不要使用 Markdown 表格、列表符号或 * 号，只输出上述纯文本块。
 
@@ -775,6 +822,16 @@
       el.textContent = msg;
       el.className = 'status ' + (isErr ? 'err' : 'ok');
     }
+
+    // ---- 新建歌曲表单展开/收起 ----
+    document.getElementById('toggleAddSongBtn').addEventListener('click', () => {
+      const panel = document.getElementById('addSongPanel');
+      const btn = document.getElementById('toggleAddSongBtn');
+      const open = panel.style.display === 'none';
+      panel.style.display = open ? 'block' : 'none';
+      btn.textContent = open ? '收起表单' : '+ 新建歌曲';
+      if (open) document.getElementById('songTitle').focus();
+    });
 
     // ---- 新建歌曲 ----
     document.getElementById('addSongBtn').addEventListener('click', () => {
@@ -861,14 +918,17 @@
         if (item) { DB.addGrammar(Object.assign({ songId: songId }, item)); g++; }
       });
 
-      // 习题
-      sectionLines(text, '【习题】').forEach(line => {
+      // 语法题（兼容旧的【习题】分区）
+      const quizLines = sectionLines(text, '【语法题】').length
+        ? sectionLines(text, '【语法题】')
+        : sectionLines(text, '【习题】');
+      quizLines.forEach(line => {
         const item = parseQuizLine(line);
         if (item) { DB.addQuiz(Object.assign({ songId: songId }, item)); q++; }
       });
 
       if (w + g + q + pairCount === 0) {
-        setStatus('importStatus', '❌ 未识别到有效内容，请检查是否包含【歌词对照】【生词】【语法】【习题】标签。', true);
+        setStatus('importStatus', '❌ 未识别到有效内容，请检查是否包含【歌词对照】【生词】【语法】【语法题】标签。', true);
         return;
       }
 
@@ -891,6 +951,19 @@
       return String(pattern || '').replace(/^[～〜~]+/, '').trim();
     }
     /**
+     * 从生词里抽取可用于模糊匹配的词干（应对动词变形）
+     * 枯れる -> 枯、枯れ；食べ物 -> 食、食べ；名词 世界 -> 无
+     */
+    function wordStems(word) {
+      const w = String(word || '');
+      const kanjiPrefix = (w.match(/^[\u4e00-\u9fff々]+/) || [''])[0];
+      if (!kanjiPrefix || kanjiPrefix.length >= w.length) return [];
+      const stems = [kanjiPrefix];
+      const plusOne = w.slice(0, kanjiPrefix.length + 1);
+      if (plusOne !== w) stems.push(plusOne);
+      return Array.from(new Set(stems)).filter(s => s && s !== w);
+    }
+    /**
      * 生成用于某首歌的高亮函数：在歌词里把生词、语法点包成 span
      * 生词 -> .hl-word（蓝），语法 -> .hl-grammar（紫）
      */
@@ -899,11 +972,11 @@
 
       wordItems.forEach(w => {
         if (!w.word) return;
-        candidates.push({
-          text: w.word,
-          kind: 'word',
-          id: w.id,
-          title: [w.reading, w.meaning].filter(Boolean).join(' ')
+        const title = [w.reading, w.meaning].filter(Boolean).join(' ');
+        candidates.push({ text: w.word, kind: 'word', id: w.id, title: title });
+        // 模糊匹配：词干也加入候选，应对歌词里的动词变形
+        wordStems(w.word).forEach(stem => {
+          candidates.push({ text: stem, kind: 'word', id: w.id, title: title });
         });
       });
 
@@ -960,7 +1033,7 @@
         alert(
           `【${w.word}】${w.reading ? ' ' + w.reading : ''}\n` +
           `词性：${w.pos || '—'}\n` +
-          `词根：${w.root || '—'}\n` +
+          `派生词/词根：${w.root || '—'}\n` +
           `释义：${w.meaning || '—'}\n\n` +
           `例句：${w.example || '—'}\n` +
           `例句翻译：${w.exampleCn || '—'}`
@@ -1107,7 +1180,7 @@
           <div class="item-body">
             ${field('读音', w.reading)}
             ${field('词性', w.pos)}
-            ${field('词根', w.root)}
+            ${field('派生词/词根', w.root)}
             ${field('释义', w.meaning)}
             ${field('例句', w.example)}
             ${field('例句翻译', w.exampleCn)}
@@ -1219,11 +1292,13 @@
             <input type="checkbox" class="checkbox quiz-cb" ${quizChecked.has(q.id) ? 'checked' : ''}>
             <span class="arrow">▶</span>
             <div class="item-main">
-              <div class="item-title">Q: ${escapeHtml(q.question)}</div>
+              <div class="item-title">${q.type ? `<span class="type-tag">${escapeHtml(q.type)}</span>` : ''}${escapeHtml(q.question)}</div>
               <div class="item-sub">${q.songId ? escapeHtml(songTitleById(q.songId)) : ''}</div>
             </div>
           </div>
           <div class="item-body">
+            ${field('题型', q.type)}
+            ${field('选项', q.options)}
             ${field('答案', q.answer)}
             ${field('解析', q.explanation)}
             ${field('关联歌曲', q.songId ? songTitleById(q.songId) : '')}
