@@ -1,1 +1,0 @@
-# vocaloid-japanese-workbench
