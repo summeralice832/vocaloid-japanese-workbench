@@ -770,17 +770,14 @@
       `你是一位资深日语老师，擅长分析术力口（Vocaloid）歌词（本次歌曲：${songTitle || '未命名'}）。请结合歌曲的剧情与隐喻，按以下步骤分析我接下来提供的歌词：
 
 【分析要求】
-1. 地毯式提取：长句必须拆解，不要只挑几个词，必须把整首歌的生词和语法穷尽。遇到动词变形、复合词，全部分析。
+1. 全景标注：必须细致到每个长句！不要只挑几个词。尽量多提取生词（尤其是动词变形、复合词）和核心语法点。
 2. 派生词解释：对于提取的生词，如果有派生词或词根关联，请解释（如：食べる → 食べ物）。
-3. 结合剧情：交叉校对直译和意译，必须结合术曲的隐喻和剧情，不要单独写“剧情隐喻分析”。请你在提取语法和生词时，必须在“用法解析”里结合这首歌的剧情或隐喻，告诉我在当前语境下为什么用这个语法。
+3. 结合剧情：交叉校对直译和意译，必须结合术曲的隐喻和剧情。
 
 【输出格式（请严格用竖线分隔，不要换行）】
 【歌词对照】
 日文：xxxxx
 中文：xxxxx
-日文：第二句
-中文：第二句翻译
-（...必须完整输出整首歌，中间不要断开，不要加其他标签...）
 
 【生词】
 单词 | 读音 | 词性 | 派生词/词根 | 释义 | 例句 | 例句翻译
@@ -859,50 +856,51 @@
     });
 
     // ---- 剪贴板复制封装：优先 Clipboard API，回退 execCommand ----
-async function copyToClipboard(text) {
-if (navigator.clipboard && window.isSecureContext) {
-try {
-await navigator.clipboard.writeText(text);
-return true;
-} catch (e) { /* fall through to legacy path */ }
-}
-try {
-const ta = document.createElement('textarea');
-ta.value = text;
-ta.style.position = 'fixed';
-ta.style.top = '-1000px';
-ta.style.opacity = '0';
-document.body.appendChild(ta);
-ta.select();
-const ok = document.execCommand('copy');
-document.body.removeChild(ta);
-return ok;
-} catch (e) {
-return false;
-}
-}
- 
-// ---- 分析：复制提示词 + 歌词到剪贴板，然后打开 DeepSeek 首页 ----
-document.getElementById('analyzeBtn').addEventListener('click', async () => {
+    async function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (e) { /* 回退到 legacy 方案 */ }
+      }
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.top = '-1000px';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // ---- 分析：复制提示词 + 歌词到剪贴板，然后打开 DeepSeek 首页 ----
+    document.getElementById('analyzeBtn').addEventListener('click', async () => {
       const lyrics = document.getElementById('lyricsInput').value.trim();
       if (!lyrics) { alert('请先粘贴歌词'); return; }
       const song = DB.getSong(document.getElementById('wbSongSelect').value);
       const full = PROMPT(song && song.title) + '\n\n' + lyrics;
-       
-const copyOk = await copyToClipboard(full);
-if (!copyOk) {
-alert('⚠️ 自动复制失败，请手动点击「复制提示词模板」复制，再去 DeepSeek 粘贴。');
-} else {
-alert('✅ 提示词 + 歌词已复制到剪贴板，即将打开 DeepSeek，请在输入框中粘贴。');
-}
-window.open('https://chat.deepseek.com/', '_blank');
+
+      const copyOk = await copyToClipboard(full);
+      if (!copyOk) {
+        alert('⚠️ 自动复制失败，请手动点击「复制提示词模板」复制，再去 DeepSeek 粘贴。');
+      } else {
+        alert('✅ 提示词 + 歌词已复制到剪贴板，即将打开 DeepSeek，请在输入框中粘贴。');
+      }
+      window.open('https://chat.deepseek.com/', '_blank');
+    });
 
     document.getElementById('copyPromptBtn').addEventListener('click', async () => {
       const song = DB.getSong(document.getElementById('wbSongSelect').value);
       const lyrics = document.getElementById('lyricsInput').value.trim();
       const full = PROMPT(song && song.title) + (lyrics ? '\n\n' + lyrics : '');
       const ok = await copyToClipboard(full);
-alert(ok ? '提示词已复制到剪贴板 ✅' : '复制失败，请手动选中复制');
+      alert(ok ? '提示词已复制到剪贴板 ✅' : '复制失败，请手动选中复制');
     });
 
     // ---- 导入 AI 结果 ----
