@@ -176,6 +176,17 @@
     .lyric-cn { font-size: 0.86rem; color: var(--muted); margin-top: 0.1rem; }
     .lyric-raw { white-space: pre-wrap; font-size: 0.9rem; }
 
+    /* 歌词高亮：生词蓝色、语法紫色 */
+    .hl-word, .hl-grammar {
+      padding: 0 2px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .hl-word { color: #1d4ed8; background: #dbeafe; }
+    .hl-grammar { color: #7c3aed; background: #ede9fe; }
+    .hl-word:hover, .hl-grammar:hover { filter: brightness(0.92); }
+
     /* 确认弹窗 */
     .modal-mask {
       position: fixed; inset: 0;
@@ -268,7 +279,7 @@
 ～てもいい | 动词て形 + もいい | 表示许可 | 表示可以做某事 | ここに座ってもいいですか？ | 可以坐这里吗？
 
 【习题】
-「てもいい」の意味は？ | 表示许可"></textarea>
+「てもいい」の意味は？ | 表示许可 | 「てもいい」表示允许做某事。"></textarea>
         <button class="btn-primary" id="classifyBtn" style="margin-top:0.75rem;">智能分类并入库</button>
         <div id="importStatus" class="status"></div>
       </div>
@@ -436,6 +447,7 @@
       /* ---------- 生词 ----------
          单词 | 读音 | 词性 | 词根 | 释义 | 例句 | 例句翻译 */
       listWords() { return this._raw.words.slice().sort((a, b) => b.createdAt - a.createdAt); },
+      getWord(id) { return this._raw.words.find(w => w.id === id); },
       addWord(w) {
         const item = {
           id: uid(), createdAt: Date.now(), songId: '',
@@ -455,6 +467,7 @@
       /* ---------- 语法 ----------
          语法 | 接续 | 意思 | 用法解析 | 例句 | 例句翻译 */
       listGrammar() { return this._raw.grammar.slice().sort((a, b) => b.createdAt - a.createdAt); },
+      getGrammar(id) { return this._raw.grammar.find(g => g.id === id); },
       addGrammar(g) {
         const item = {
           id: uid(), createdAt: Date.now(), songId: '',
@@ -474,7 +487,11 @@
       /* ---------- 习题 ---------- */
       listQuizzes() { return this._raw.quizzes.slice().sort((a, b) => b.createdAt - a.createdAt); },
       addQuiz(q) {
-        const item = { id: uid(), createdAt: Date.now(), songId: '', question: '', answer: '', ...q };
+        const item = {
+          id: uid(), createdAt: Date.now(), songId: '',
+          question: '', answer: '', explanation: '',
+          ...q
+        };
         this._raw.quizzes.push(item);
         this.save();
         return item;
@@ -652,12 +669,19 @@
       };
     }
 
-    // 习题：问题 | 答案
+    /**
+     * 习题：题目 | 答案 | 解析
+     * arr[0] 题目  arr[1] 答案  arr[2] 解析
+     */
     function parseQuizLine(line) {
       const arr = line.split('|');
       const question = pick(arr, 0);
       if (!question) return null;
-      return { question: question, answer: pick(arr, 1) };
+      return {
+        question: question,
+        answer: pick(arr, 1),
+        explanation: pick(arr, 2)
+      };
     }
 
     /**
@@ -716,7 +740,8 @@
 （共 6 段，缺一不可）
 
 【习题】
-问题 | 答案
+题目 | 答案 | 解析
+（共 3 段：题目、答案、解析）
 
 不要使用 Markdown 表格、列表符号或 * 号，只输出上述纯文本块。
 
@@ -856,6 +881,112 @@
     });
 
     /* ============================================================
+       歌词高亮
+       ============================================================ */
+    function escapeRegExp(str) {
+      return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    // 语法点去掉前导波浪线；含空格/加号/斜杠的复合描述无法直接匹配，跳过
+    function grammarSurface(pattern) {
+      return String(pattern || '').replace(/^[～〜~]+/, '').trim();
+    }
+    /**
+     * 生成用于某首歌的高亮函数：在歌词里把生词、语法点包成 span
+     * 生词 -> .hl-word（蓝），语法 -> .hl-grammar（紫）
+     */
+    function buildHighlighter(wordItems, grammarItems) {
+      const candidates = [];
+
+      wordItems.forEach(w => {
+        if (!w.word) return;
+        candidates.push({
+          text: w.word,
+          kind: 'word',
+          id: w.id,
+          title: [w.reading, w.meaning].filter(Boolean).join(' ')
+        });
+      });
+
+      grammarItems.forEach(g => {
+        const surface = grammarSurface(g.pattern);
+        if (!surface || /[\s+／/]/.test(surface)) return;
+        candidates.push({
+          text: surface,
+          kind: 'grammar',
+          id: g.id,
+          title: g.meaning || surface
+        });
+      });
+
+      // 长词优先，避免长词被更短的词截断
+      const infoByEscaped = new Map();
+      candidates
+        .sort((a, b) => b.text.length - a.text.length)
+        .forEach(c => {
+          const esc = escapeHtml(c.text);
+          if (!infoByEscaped.has(esc)) infoByEscaped.set(esc, c);
+        });
+
+      const keys = Array.from(infoByEscaped.keys());
+      if (!keys.length) return text => escapeHtml(text);
+
+      const alts = keys.map(escapeRegExp).join('|');
+
+      return function (text) {
+        const safe = escapeHtml(text);
+        const rx = new RegExp(alts, 'g');
+        let out = '';
+        let last = 0;
+        let m;
+
+        while ((m = rx.exec(safe)) !== null) {
+          if (m[0] === '') { rx.lastIndex++; continue; }
+          const info = infoByEscaped.get(m[0]);
+          if (!info) continue;
+          out += safe.slice(last, m.index);
+          out += `<span class="hl-${info.kind}" data-kind="${info.kind}" data-id="${info.id}" title="${escapeHtml(info.title)}">${m[0]}</span>`;
+          last = m.index + m[0].length;
+        }
+        out += safe.slice(last);
+        return out;
+      };
+    }
+
+    // 点击高亮词：弹出该词的完整信息
+    function showTermDetail(kind, id) {
+      if (kind === 'word') {
+        const w = DB.getWord(id);
+        if (!w) return;
+        alert(
+          `【${w.word}】${w.reading ? ' ' + w.reading : ''}\n` +
+          `词性：${w.pos || '—'}\n` +
+          `词根：${w.root || '—'}\n` +
+          `释义：${w.meaning || '—'}\n\n` +
+          `例句：${w.example || '—'}\n` +
+          `例句翻译：${w.exampleCn || '—'}`
+        );
+      } else {
+        const g = DB.getGrammar(id);
+        if (!g) return;
+        alert(
+          `【${g.pattern}】\n` +
+          `接续：${g.connection || '—'}\n` +
+          `意思：${g.meaning || '—'}\n` +
+          `用法解析：${g.usage || '—'}\n\n` +
+          `例句：${g.example || '—'}\n` +
+          `例句翻译：${g.exampleCn || '—'}`
+        );
+      }
+    }
+
+    document.getElementById('lyricsList').addEventListener('click', (e) => {
+      const hl = e.target.closest('.hl-word, .hl-grammar');
+      if (!hl) return;
+      e.stopPropagation();
+      showTermDetail(hl.dataset.kind, hl.dataset.id);
+    });
+
+    /* ============================================================
        歌词本（仅展示）
        ============================================================ */
     function renderLyrics() {
@@ -870,16 +1001,22 @@
       }
 
       songs.forEach(s => {
-        const words = DB.listWords().filter(w => w.songId === s.id).length;
-        const grammar = DB.listGrammar().filter(g => g.songId === s.id).length;
+        const wordItems = DB.listWords().filter(w => w.songId === s.id);
+        const grammarItems = DB.listGrammar().filter(g => g.songId === s.id);
+        const words = wordItems.length;
+        const grammar = grammarItems.length;
         const quizzes = DB.listQuizzes().filter(q => q.songId === s.id).length;
         const pairs = Array.isArray(s.lyricsPairs) ? s.lyricsPairs : [];
+        const highlight = buildHighlighter(wordItems, grammarItems);
 
         let lyricHtml = '';
         if (pairs.length) {
-          lyricHtml = pairs.map(p => `
+          const legend = (words || grammar)
+            ? `<div class="hint" style="margin:0 0 0.6rem;">点击高亮词可查看例句：<span class="hl-word">生词</span> <span class="hl-grammar">语法</span></div>`
+            : '';
+          lyricHtml = legend + pairs.map(p => `
             <div class="lyric-pair">
-              <div class="lyric-jp">${escapeHtml(p.jp)}</div>
+              <div class="lyric-jp">${highlight(p.jp)}</div>
               <div class="lyric-cn">${escapeHtml(p.cn)}</div>
             </div>
           `).join('');
@@ -1088,6 +1225,7 @@
           </div>
           <div class="item-body">
             ${field('答案', q.answer)}
+            ${field('解析', q.explanation)}
             ${field('关联歌曲', q.songId ? songTitleById(q.songId) : '')}
           </div>
         `;
