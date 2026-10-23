@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vocaloid Japanese Workbench</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --border: #e5e7eb;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { margin: 0; font-size: 1.25rem; }
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .tab {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+    }
+    .tab.active { background: #eef2ff; color: var(--primary); font-weight: 600; }
+    main { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    h2 { margin: 0 0 0.75rem; font-size: 1.1rem; }
+    label { display: block; margin: 0.75rem 0 0.25rem; color: var(--muted); font-size: 0.875rem; }
+    textarea, input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    textarea { min-height: 160px; resize: vertical; }
+    .row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .row > * { flex: 1; min-width: 200px; }
+    button {
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: var(--danger-hover); }
+    .btn-secondary { background: #e5e7eb; color: var(--text); }
+    .btn-secondary:hover { background: #d1d5db; }
+    .hint { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+    .list { margin-top: 0.75rem; }
+    .item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+    }
+    .item-header {
+      padding: 0.75rem 1rem;
+      background: #f9fafb;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item-actions { display: flex; gap: 0.5rem; }
+    .item-body {
+      padding: 0.75rem 1rem;
+      display: none;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+      background: #fff;
+    }
+    .item.expanded .item-body { display: block; }
+    .empty { color: var(--muted); font-size: 0.9rem; padding: 0.5rem 0; }
+    .status { margin-top: 0.75rem; font-size: 0.9rem; min-height: 1.4em; }
+    .status.ok { color: #16a34a; }
+    .status.err { color: var(--danger); }
+    .section-title { font-weight: 600; margin: 1.25rem 0 0.5rem; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎤 Vocaloid 日语学习工作台</h1>
+    <nav class="tabs">
+      <button class="tab active" data-tab="workbench">工作台</button>
+      <button class="tab" data-tab="repo">我的仓库</button>
+      <button class="tab" data-tab="settings">设置</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 工作台 -->
+    <section id="workbench" class="panel active">
+      <div class="card">
+        <h2>粘贴歌词</h2>
+        <textarea id="lyricsInput" placeholder="把日文歌词粘贴到这里…"></textarea>
+        <button class="btn-primary" id="analyzeBtn" style="margin-top:0.75rem;">一键去分析</button>
+        <p class="hint">点击后会在新标签页打开 DeepSeek，并把预设提示词 + 歌词写入 URL 参数（若内容过长请自行复制粘贴）。</p>
+      </div>
+    </section>
+
+    <!-- 我的仓库 -->
+    <section id="repo" class="panel">
+      <div class="card">
+        <h2>添加歌词到歌词本</h2>
+        <label>歌名</label>
+        <input type="text" id="songTitle" placeholder="例如：ロストワンの号哭" />
+        <label>原词</label>
+        <textarea id="songOriginal" placeholder="日文原词…"></textarea>
+        <label>翻译</label>
+        <textarea id="songTranslation" placeholder="中文翻译…"></textarea>
+        <button class="btn-primary" id="addSongBtn" style="margin-top:0.75rem;">加入歌词本</button>
+      </div>
+
+      <div class="card">
+        <h2>粘贴 AI 分析结果并智能分类</h2>
+        <textarea id="analysisInput" placeholder="把 DeepSeek / 其他 AI 的分析结果粘贴到这里，需包含 【生词】 和 【语法】 标签…"></textarea>
+        <button class="btn-primary" id="classifyBtn" style="margin-top:0.75rem;">智能分类</button>
+        <p class="hint">会自动把 【生词】 下的条目存入单词本，【语法】 下的条目存入语法库。</p>
+      </div>
+
+      <div class="card">
+        <div class="section-title">歌词本</div>
+        <div id="lyricsList" class="list"></div>
+
+        <div class="section-title">单词本</div>
+        <div id="wordsList" class="list"></div>
+
+        <div class="section-title">语法库</div>
+        <div id="grammarList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- 设置 -->
+    <section id="settings" class="panel">
+      <div class="card">
+        <h2>Gist 云端同步</h2>
+        <label>GitHub Token（需勾选 gist 权限）</label>
+        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" />
+        <label>Gist ID</label>
+        <input type="text" id="gistId" placeholder="例如：a1b2c3d4e5f6…" />
+        <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button class="btn-secondary" id="createGistBtn">自动创建空 Gist</button>
+          <button class="btn-primary" id="saveToCloudBtn">保存到云端</button>
+          <button class="btn-secondary" id="restoreFromCloudBtn">从云端恢复</button>
+        </div>
+        <p class="hint">
+          手动创建：访问 <a href="https://gist.github.com/" target="_blank">https://gist.github.com/</a>，
+          新建一个 Secret Gist，文件名建议为 <code>vocaloid-japanese-workbench.json</code>，
+          然后从地址栏复制 Gist ID（/gists/ 后的那串字符）填入上方。
+        </p>
+        <div id="settingsStatus" class="status"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===== 数据层 =====
+    const STORAGE_KEY = 'vjw_data';
+    const SETTINGS_KEY = 'vjw_settings';
+    const GIST_FILENAME = 'vocaloid-japanese-workbench.json';
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return {
+            lyrics: Array.isArray(parsed.lyrics) ? parsed.lyrics : [],
+            words: Array.isArray(parsed.words) ? parsed.words : [],
+            grammar: Array.isArray(parsed.grammar) ? parsed.grammar : []
+          };
+        }
+      } catch (e) { console.error(e); }
+      return { lyrics: [], words: [], grammar: [] };
+    }
+
+    function saveData(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return { token: '', gistId: '' };
+    }
+
+    function saveSettings(settings) {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    let data = loadData();
+    let settings = loadSettings();
+
+    // ===== UI 层 =====
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.panel');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+        if (tab.dataset.tab === 'repo') renderRepo();
+        if (tab.dataset.tab === 'settings') renderSettings();
+      });
+    });
+
+    function renderRepo() {
+      renderList('lyricsList', data.lyrics, item => `《${item.title || '未命名'}》`, item => `歌名：${item.title}\n\n原词：\n${item.original}\n\n翻译：\n${item.translation}`);
+      renderList('wordsList', data.words, item => item.content.split('\n')[0] || '生词条目', item => item.content);
+      renderList('grammarList', data.grammar, item => item.content.split('\n')[0] || '语法条目', item => item.content);
+    }
+
+    function renderList(containerId, list, titleFn, bodyFn) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      if (!list.length) {
+        container.innerHTML = '<div class="empty">暂无数据</div>';
+        return;
+      }
+      list.slice().reverse().forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.innerHTML = `
+          <div class="item-header">
+            <div class="item-title">${escapeHtml(titleFn(item))}</div>
+            <div class="item-actions">
+              <button class="btn-danger btn-sm delete-btn" data-id="${item.id}">删除</button>
+            </div>
+          </div>
+          <div class="item-body">${escapeHtml(bodyFn(item))}</div>
+        `;
+        el.querySelector('.item-header').addEventListener('click', (e) => {
+          if (e.target.closest('.delete-btn')) return;
+          el.classList.toggle('expanded');
+        });
+        el.querySelector('.delete-btn').addEventListener('click', () => {
+          const type = containerId === 'lyricsList' ? 'lyrics' : containerId === 'wordsList' ? 'words' : 'grammar';
+          deleteItem(type, item.id);
+        });
+        container.appendChild(el);
+      });
+    }
+
+    function escapeHtml(text) {
+      if (text == null) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function deleteItem(type, id) {
+      data[type] = data[type].filter(i => i.id !== id);
+      saveData(data);
+      renderRepo();
+    }
+
+    // ===== 工作台 =====
+    const PROMPT = `你是一位资深日语老师，擅长分析术力口（Vocaloid）歌词。请结合歌曲的剧情与隐喻，按以下步骤分析我接下来提供的歌词：
+
+1. 先给出直译，再给出意译，并进行交叉校对说明；
+2. 提取其中的生词，标注读音（振り仮名）、词性、中文含义，并给出例句；
+3. 提取核心语法点，说明用法并给出例句；
+4. 针对上述语法点出 3-5 道练习题。
+
+最后，请把结果按以下纯文本块格式整理：
+
+【生词】
+（每行一个生词条目）
+
+【语法】
+（每行一个语法条目）
+
+以下是需要分析的歌词：`;
+
+    document.getElementById('analyzeBtn').addEventListener('click', () => {
+      const lyrics = document.getElementById('lyricsInput').value.trim();
+      if (!lyrics) return alert('请先粘贴歌词');
+      const full = PROMPT + '\n\n' + lyrics;
+      const url = 'https://chat.deepseek.com/?q=' + encodeURIComponent(full);
+      window.open(url, '_blank');
+    });
+
+    // ===== 我的仓库 =====
+    document.getElementById('addSongBtn').addEventListener('click', () => {
+      const title = document.getElementById('songTitle').value.trim();
+      const original = document.getElementById('songOriginal').value.trim();
+      const translation = document.getElementById('songTranslation').value.trim();
+      if (!title || !original) return alert('请至少填写歌名和原词');
+      data.lyrics.push({ id: uid(), title, original, translation, createdAt: Date.now() });
+      saveData(data);
+      document.getElementById('songTitle').value = '';
+      document.getElementById('songOriginal').value = '';
+      document.getElementById('songTranslation').value = '';
+      renderRepo();
+    });
+
+    document.getElementById('classifyBtn').addEventListener('click', () => {
+      const text = document.getElementById('analysisInput').value;
+      if (!text.trim()) return alert('请先粘贴 AI 分析结果');
+      const words = extractSection(text, '【生词】', '【语法】');
+      const grammar = extractSection(text, '【语法】');
+      let addedW = 0, addedG = 0;
+      words.forEach(line => {
+        if (line) {
+          data.words.push({ id: uid(), content: line, createdAt: Date.now() });
+          addedW++;
+        }
+      });
+      grammar.forEach(line => {
+        if (line) {
+          data.grammar.push({ id: uid(), content: line, createdAt: Date.now() });
+          addedG++;
+        }
+      });
+      saveData(data);
+      document.getElementById('analysisInput').value = '';
+      renderRepo();
+      alert(`分类完成：新增 ${addedW} 条生词，${addedG} 条语法。`);
+    });
+
+    function extractSection(text, startMarker, endMarker) {
+      const start = text.indexOf(startMarker);
+      if (start === -1) return [];
+      let end = text.length;
+      if (endMarker) {
+        const foundEnd = text.indexOf(endMarker, start + startMarker.length);
+        if (foundEnd !== -1) end = foundEnd;
+      }
+      const section = text.slice(start + startMarker.length, end);
+      return section
+        .split(/\n+/)
+        .map(s => s.trim().replace(/^[-•*\d]+\.?\s*/, ''))
+        .filter(s => s.length > 0);
+    }
+
+    // ===== 设置 / Gist =====
+    function renderSettings() {
+      document.getElementById('githubToken').value = settings.token || '';
+      document.getElementById('gistId').value = settings.gistId || '';
+    }
+
+    function setStatus(msg, isErr) {
+      const el = document.getElementById('settingsStatus');
+      el.textContent = msg;
+      el.className = 'status ' + (isErr ? 'err' : 'ok');
+    }
+
+    function readSettingsFromInputs() {
+      settings.token = document.getElementById('githubToken').value.trim();
+      settings.gistId = document.getElementById('gistId').value.trim();
+      saveSettings(settings);
+    }
+
+    document.getElementById('createGistBtn').addEventListener('click', async () => {
+      readSettingsFromInputs();
+      if (!settings.token) return setStatus('请先填写 GitHub Token', true);
+      setStatus('正在创建 Gist…');
+      try {
+        const res = await fetch('https://api.github.com/gists', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': 'token ' + settings.token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            description: 'Vocaloid Japanese Workbench sync',
+            public: false,
+            files: {
+              [GIST_FILENAME]: {
+                content: JSON.stringify(data, null, 2)
+              }
+            }
+          })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || '创建失败');
+        settings.gistId = json.id;
+        saveSettings(settings);
+        document.getElementById('gistId').value = json.id;
+        setStatus('Gist 创建成功，ID 已填入：' + json.id);
+      } catch (err) {
+        setStatus('创建失败：' + err.message, true);
+      }
+    });
+
+    document.getElementById('saveToCloudBtn').addEventListener('click', async () => {
+      readSettingsFromInputs();
+      if (!settings.token || !settings.gistId) return setStatus('请填写 Token 和 Gist ID', true);
+      setStatus('正在保存到云端…');
+      try {
+        const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
+          method: 'PATCH',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': 'token ' + settings.token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            description: 'Vocaloid Japanese Workbench sync',
+            files: {
+              [GIST_FILENAME]: {
+                content: JSON.stringify(data, null, 2)
+              }
+            }
+          })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || '保存失败');
+        setStatus('保存成功，更新时间：' + new Date(json.updated_at).toLocaleString());
+      } catch (err) {
+        setStatus('保存失败：' + err.message, true);
+      }
+    });
+
+    document.getElementById('restoreFromCloudBtn').addEventListener('click', async () => {
+      readSettingsFromInputs();
+      if (!settings.token || !settings.gistId) return setStatus('请填写 Token 和 Gist ID', true);
+      setStatus('正在从云端恢复…');
+      try {
+        const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': 'token ' + settings.token
+          }
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || '拉取失败');
+        const file = json.files && json.files[GIST_FILENAME];
+        if (!file) throw new Error('Gist 中未找到文件 ' + GIST_FILENAME);
+        const remote = JSON.parse(file.content);
+        data = {
+          lyrics: Array.isArray(remote.lyrics) ? remote.lyrics : [],
+          words: Array.isArray(remote.words) ? remote.words : [],
+          grammar: Array.isArray(remote.grammar) ? remote.grammar : []
+        };
+        saveData(data);
+        renderRepo();
+        setStatus('恢复成功，更新时间：' + new Date(json.updated_at).toLocaleString());
+      } catch (err) {
+        setStatus('恢复失败：' + err.message, true);
+      }
+    });
+
+    // 初始化
+    renderRepo();
+    renderSettings();
+  </script>
+</body>
+</html>
